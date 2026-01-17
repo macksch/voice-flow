@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --bg-overlay: #101014;
+            --text-primary: #FFFFFF;
+            --accent-red: #EF4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        .pill {
+            background: var(--bg-overlay);
+            border: 1px solid var(--border);
+            border-radius: 60px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+            width: fit-content;
+            min-width: 320px;
+            max-width: 400px;
+        }
+
+        .pill-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rec-dot-animated {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-red);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .text-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .rec-status-line {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .rec-sub-line {
+            font-size: 10px;
+            color: #6B7280;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .visualizer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 20px;
+            min-width: 60px;
+        }
+
+        .bar {
+            width: 3px;
+            background-color: var(--accent-red);
+            border-radius: 2px;
+            height: 4px;
+            transition: height 0.1s ease;
+            opacity: 0.7;
+        }
+
+        .pill-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding-left: 12px;
+        }
+
+        .timer {
+            font-family: monospace;
+            font-size: 14px;
+            color: #D1D5DB;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            70% {
+                opacity: 0.7;
+                box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pill">
+        <div class="pill-left">
+            <div class="rec-dot-animated"></div>
+            <div class="text-group">
+                <div class="rec-status-line">Recording in <span id="current-mode"
+                        style="color:var(--accent-red)">Standard</span>...</div>
+                <div class="rec-sub-line">VOICEFLOW HUD</div>
+            </div>
+        </div>
+
+        <div class="visualizer" id="visualizer">
+            <!-- Bars injected by JS -->
+        </div>
+
+        <div class="pill-right">
+            <div class="timer" id="timer">00:00</div>
+            <button class="close-btn" id="cancel-btn">×</button>
+        </div>
+    </div>
+
+    <!-- Re-use existing recording logic but adapted -->
+    <script src="recording.js"></script>
+    <script src="prompts.js"></script>
+    <script src="api.js"></script>
+</body>
+
+</html>

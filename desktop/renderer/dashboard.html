@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceFlow Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div>
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="../assets/icons/dashboard-logo.png"
+                        style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <div class="logo-text">Voiceflow</div>
+            </div>
+
+            <nav>
+                <div class="nav-item active" data-tab="home">
+                    <span>📊</span> Dashboard
+                </div>
+                <div class="nav-item" data-tab="modes">
+                    <span>✨</span> Modi
+                </div>
+                <div class="nav-item" data-tab="history">
+                    <span>🕒</span> Historie
+                </div>
+                <div class="nav-item" data-tab="settings">
+                    <span>⚙️</span> Einstellungen
+                </div>
+            </nav>
+        </div>
+
+        <div class="api-status">
+            <div class="status-dot"></div>
+            <span>Groq API Verbunden</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Header (Shared) -->
+        <div class="top-bar">
+            <div class="header">
+                <h1 id="page-title">Willkommen zurück</h1>
+                <p id="page-subtitle">Verwalte deine VoiceFlow Sprachverarbeitung.</p>
+            </div>
+            <div class="user-actions">
+                <button class="icon-btn">🔔</button>
+                <div class="avatar"></div>
+            </div>
+        </div>
+
+        <!-- VIEW: Home / Dashboard -->
+        <div id="view-home" class="view">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon stats-icon-1">🎤</div>
+                    <div class="stat-label">Gesamt-Aufnahmen</div>
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-trend">
+                        <div class="stat-trend-fill" style="width: 45%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon stats-icon-2">📄</div>
+                    <div class="stat-label">Wörter verarbeitet</div>
+                    <div class="stat-value" id="stat-words">0</div>
+                    <div class="stat-trend">
+                        <div class="stat-trend-fill" style="width: 70%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card highlight">
+                    <div class="stat-icon">✨</div>
+                    <div class="stat-label">Aktiver Modus</div>
+                    <div class="stat-value" id="stat-active-mode">Standard</div>
+                    <div class="stat-label" style="opacity: 0.8">Drücke Hotkey zum Starten</div>
+                </div>
+            </div>
+
+            <!-- Activity Chart -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2>Aktivitätsverlauf</h2>
+                    <select style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">
+                        <option>Letzte 7 Tage</option>
+                    </select>
+                </div>
+                <div class="chart-placeholder" id="activity-chart">
+                    <!-- Bars injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: Modes Editor -->
+        <div id="view-modes" class="view hidden">
+            <div class="mode-editor-container">
+
+                <!-- Left: List -->
+                <div class="mode-list-panel">
+                    <button class="btn-create" id="btn-create-mode-view">+ Neuen Modus erstellen</button>
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <button class="btn-secondary" id="btn-export-modes"
+                            style="flex:1; font-size:11px; padding:8px;">⬇ Exportieren</button>
+                        <button class="btn-secondary" id="btn-import-modes"
+                            style="flex:1; font-size:11px; padding:8px;">⬆ Importieren</button>
+                    </div>
+                    <input type="file" id="file-import-modes" accept=".json" style="display:none;">
+
+                    <div id="mode-list-container">
+                        <!-- Mode Items injected here -->
+                    </div>
+                </div>
+
+                <!-- Right: Details -->
+                <div class="mode-detail-panel" id="mode-detail-panel">
+                    <div class="editor-header">
+                        <h2>Modus bearbeiten</h2>
+                        <div class="mode-actions-top">
+                            <span id="editor-active-indicator" class="active-indicator hidden">● Aktiv</span>
+                            <button id="btn-set-active" class="btn-secondary">Als Aktiv setzen</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Modus-Name</label>
+                        <input type="text" id="edit-name" class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <div id="icon-picker" class="icon-grid">
+                            <!-- Icons injected by JS -->
+                        </div>
+                        <input type="hidden" id="edit-icon">
+                    </div>
+
+                    <div class="form-group">
+                        <label>System Prompt</label>
+                        <textarea id="edit-prompt" class="input-field" rows="8"></textarea>
+                    </div>
+
+                    <div style="display:flex; justify-content: space-between; margin-top: 32px;">
+                        <button class="btn-danger hidden" id="btn-delete-mode">Modus löschen</button>
+                        <div style="display:flex; gap: 12px; margin-left: auto;">
+                            <button class="btn-secondary" id="btn-cancel-edit">Abbrechen</button>
+                            <button class="btn-create" style="width: auto; margin-bottom:0;"
+                                id="btn-save-edit">Speichern</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: History -->
+        <div id="view-history" class="view hidden">
+            <div class="history-controls">
+                <input type="text" placeholder="Transkripte durchsuchen..." class="search-input" id="history-search">
+                <button class="btn-create" style="width: auto;" id="btn-start-rec-action">🎙️ Neue Aufnahme
+                    starten</button>
+            </div>
+
+            <div id="history-feed">
+                <!-- Cards injected here -->
+            </div>
+        </div>
+
+        <!-- VIEW: Settings -->
+        <div id="view-settings" class="view hidden">
+            <div class="stat-card" style="max-width: 600px;">
+                <h2>Einstellungen</h2>
+                <br>
+                <div class="form-group">
+                    <label>Groq API Key</label>
+                    <input type="password" id="api-key-input" class="input-field">
+                </div>
+
+                <div class="form-group">
+                    <label>Mikrofon</label>
+                    <select id="audio-device-select" class="input-field"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Globaler Hotkey</label>
+                    <input type="text" id="hotkey-input" class="input-field" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Overlay Position</label>
+                    <select id="overlay-pos-select" class="input-field">
+                        <option value="bottom-right">Bottom Right (Standard)</option>
+                        <option value="bottom-center">Bottom Center</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="top-center">Top Center</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="check-autostart">
+                        <span>VoiceFlow beim Systemstart starten</span>
+                    </label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:8px; opacity: 0.7;">
+                        <input type="checkbox" id="check-startmin">
+                        <span>Minimiert starten (nur Tray)</span>
+                    </label>
+                </div>
+
+                <div class="form-group" style="padding-top: 16px; border-top: 1px solid var(--border);">
+                    <h3>Software Update</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+                        <div id="update-status" style="font-size:12px; color:var(--text-secondary);">Version wird
+                            geladen...</div>
+                        <button class="btn-secondary" id="btn-check-updates"
+                            style="padding:6px 12px; font-size:12px;">Nach Updates suchen</button>
+                    </div>
+                    <div id="update-progress-bar"
+                        style="height:4px; width:100%; background:var(--bg-input); margin-top:8px; border-radius:2px; display:none;">
+                        <div id="update-progress-fill"
+                            style="height:100%; width:0%; background:var(--primary); border-radius:2px;"></div>
+                    </div>
+                    <button class="btn-primary hidden" id="btn-restart-update"
+                        style="width:100%; margin-top:12px;">Restart & Install</button>
+                </div>
+
+                <div class="form-group" style="margin-top:24px;">
+                    <button class="btn-create" id="save-settings-btn" style="width: auto;">Speichern</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div id="tutorial-overlay" class="modal-overlay hidden">
+        <div class="modal-content tutorial-modal">
+
+            <!-- Step 1: Welcome & API -->
+            <div class="tutorial-step active" data-step="1">
+                <div class="tutorial-icon">👋</div>
+                <h2>Willkommen bei VoiceFlow!</h2>
+                <p>Damit du direkt loslegen kannst, brauchen wir nur zwei kleine Dinge.</p>
+
+                <div class="tutorial-card">
+                    <h3>1. Dein Groq API Key</h3>
+                    <p>VoiceFlow wird durch die ultraschnelle Groq AI angetrieben. Hinterlege deinen Key in den
+                        Einstellungen, um die Transkription zu aktivieren.</p>
+                    <div
+                        style="background:var(--bg-input); padding:8px; border-radius:6px; font-family:monospace; font-size:12px; margin-top:8px;">
+                        Einstellungen ⚙️ → Groq API Key
+                    </div>
+                </div>
+
+                <div class="tutorial-card">
+                    <h3>2. Autostart & Hotkeys</h3>
+                    <p>Aktiviere "Beim Systemstart starten" in den Einstellungen, damit VoiceFlow immer bereit ist. Das
+                        Standard-Kürzel ist <code>Alt + Space</code>.</p>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-create btn-next-step">Weiter</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Custom Mode Best Practices -->
+            <div class="tutorial-step" data-step="2">
+                <div class="tutorial-icon">✨</div>
+                <h2>Eigene Modi erstellen</h2>
+                <p>Das Herzstück von VoiceFlow sind deine eigenen Modi. Hier sind drei Profi-Tipps für perfekte
+                    Ergebnisse:</p>
+
+                <div class="tutorial-tips">
+                    <div class="tip-item">
+                        <div class="tip-number">1</div>
+                        <div class="tip-content">
+                            <strong>Sei spezifisch.</strong><br>
+                            Schreibe "Du bist ein Senior Java Entwickler" statt nur "Du bist ein Programmierer".
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-number">2</div>
+                        <div class="tip-content">
+                            <strong>Definiere das Format.</strong><br>
+                            Sage der KI genau, wie der Output aussehen soll (z.B. "Antworte immer als JSON" oder "Nutze
+                            Bullet Points").
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-number">3</div>
+                        <div class="tip-content">
+                            <strong>Gib Beispiele.</strong><br>
+                            Wenn du einen bestimmten Stil willst, füge im Prompt ein kurzes Beispiel hinzu (z.B.
+                            "Beispiel: Tonalität: Locker, aber höflich").
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary btn-prev-step">Zurück</button>
+                    <button class="btn-create btn-next-step">Verstanden</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Ready -->
+            <div class="tutorial-step" data-step="3">
+                <div class="tutorial-icon">🚀</div>
+                <h2>Bereit zum Durchstarten</h2>
+                <p>Das war's schon! Du kannst dieses Tutorial später jederzeit in den Einstellungen erneut aufrufen.</p>
+                <div class="modal-actions">
+                    <button class="btn-create btn-finish-tutorial">Los geht's!</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="dashboard.js"></script>
+</body>
+
+</html>
