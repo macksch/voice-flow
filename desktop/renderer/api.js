@@ -60,6 +60,11 @@ async function transcribe(audioBlob, apiKey) {
             return data.text;
 
         } catch (error) {
+            // Don't retry on auth errors or rate limits immediately (let UI handle it)
+            if (error.message.includes('API Key')) {
+                throw error;
+            }
+
             attempt++;
             console.warn(`Transcription attempt ${attempt} failed:`, error);
 
@@ -158,3 +163,8 @@ async function handleApiError(response) {
 // Expose globally for renderer
 window.transcribe = transcribe;
 window.cleanText = cleanText;
+
+// Export for testing
+if (typeof module !== 'undefined') {
+    module.exports = { transcribe, cleanText };
+}

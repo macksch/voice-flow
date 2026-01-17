@@ -279,6 +279,21 @@ ipcMain.handle('set-first-run-complete', () => setFirstRunComplete());
 // App Info
 ipcMain.handle('get-app-version', () => app.getVersion());
 
+// API Connection Check
+ipcMain.handle('check-api-connection', async (_, apiKey) => {
+    if (!apiKey) return false;
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/models', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('API Check Failed:', error);
+        return false;
+    }
+});
+
 // Mode Hotkeys Refresh
 ipcMain.handle('refresh-mode-hotkeys', () => {
     registerAllHotkeys();

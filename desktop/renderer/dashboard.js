@@ -39,6 +39,8 @@ window.showToast = showToast;
 let currentActiveMode = 'standard';
 let editingModeId = null;
 let allModes = [];
+let currentLoadedHistory = [];
+let historyDisplayLimit = 20;
 
 const PRESET_ICONS = [
     '🎤', '✉️', '🎫', '💬', '📝', '⚡', '💡', '🤖',
@@ -49,13 +51,15 @@ const PRESET_ICONS = [
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Always attach listeners first so UI works even if data fails
+    attachEventListeners();
+
     try {
         await loadInitialData();
-        attachEventListeners();
-        renderActivityChart();
         checkFirstRun(); // Trigger Tutorial
     } catch (e) {
         console.error('Initialization failed', e);
+        showToast('System Init Fehler: ' + e.message, 'error');
     }
 });
 
@@ -98,13 +102,45 @@ async function checkFirstRun() {
     });
 }
 
+
+async function checkApiStatus() {
+    const statusDot = document.querySelector('.status-dot');
+    const statusText = document.querySelector('.api-status span');
+
+    if (!statusDot || !statusText) return;
+
+    statusText.innerText = 'Prüfe...';
+    statusDot.style.background = 'var(--text-secondary)';
+
+    const apiKey = document.getElementById('api-key-input').value; // Get current input value (after loadSettings)
+    // Fallback if input is empty but key is saved? loadSettings fills input, so input value is safe.
+
+    try {
+        const isConnected = await window.electron.checkApiConnection(apiKey);
+
+        if (isConnected) {
+            statusDot.style.background = 'var(--success)';
+            statusText.innerText = 'Groq API Verbunden';
+        } else {
+            statusDot.style.background = 'var(--error)';
+            statusText.innerText = 'Nicht Verbunden';
+        }
+    } catch (e) {
+        console.warn('API Check failed', e);
+        statusDot.style.background = 'var(--error)';
+        statusText.innerText = 'Statusfehler';
+    }
+}
+
 async function loadInitialData() {
+    await loadModesForEditor(); // Load modes first for Name resolution
     await loadStats();
     await loadHistory();
     await loadSettings();
+    await checkApiStatus(); // Check on load
     currentActiveMode = await window.electron.getTranscriptionMode() || 'standard';
+
     updateActiveModeDisplay();
-    await loadModesForEditor();
 
     // Issue #4: Load dynamic version
     try {
@@ -152,6 +188,11 @@ function attachEventListeners() {
                 loadSettings();
             }
         });
+    });
+
+    // Notifications
+    document.getElementById('btn-notifications').addEventListener('click', () => {
+        showToast('Keine neuen Benachrichtigungen', 'info');
     });
 
     // --- Mode Editor Actions ---
@@ -274,6 +315,8 @@ function attachEventListeners() {
             openAsHidden: startMin
         });
 
+        await checkApiStatus();
+
         showToast('Einstellungen gespeichert', 'success');
     });
 
@@ -393,6 +436,7 @@ async function loadStats() {
     document.getElementById('stat-words').innerText = (words / 1000).toFixed(1) + 'k';
 
     updateActiveModeDisplay();
+    renderActivityChart(history);
 }
 
 function updateActiveModeDisplay() {
@@ -416,15 +460,45 @@ function updateActiveModeDisplay() {
     if (sysModes[currentActiveMode]) activeEl.innerText = modeName;
 }
 
-function renderActivityChart() {
+function renderActivityChart(history) {
     const container = document.getElementById('activity-chart');
+    if (!container || !history) return;
+
     container.innerHTML = '';
-    const data = [30, 45, 20, 60, 80, 50, 90];
-    data.forEach(val => {
+
+    // Prepare last 7 days (YYYY-MM-DD)
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+
+    // Count recordings per day
+    const counts = days.map(day => {
+        return history.filter(item => {
+            if (!item.timestamp) return false;
+            try {
+                const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
+                return itemDate === day;
+            } catch (e) { return false; }
+        }).length;
+    });
+
+    const max = Math.max(...counts, 5); // Minimum scale of 5 for aesthetics
+
+    counts.forEach((val, idx) => {
         const bar = document.createElement('div');
         bar.className = 'chart-bar';
-        bar.style.height = `${val}%`;
-        bar.title = `${val} min`;
+
+        const percentage = (val / max) * 100;
+        bar.style.height = `${percentage}%`;
+
+        // Tooltip
+        const dateObj = new Date(days[idx]);
+        const dateStr = dateObj.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        bar.title = `${dateStr}: ${val} Aufnahmen`;
+
         container.appendChild(bar);
     });
 }
@@ -630,34 +704,68 @@ async function saveModeFromEditor() {
 
 
 // --- HISTORY ---
+// --- HISTORY ---
 async function loadHistory(filterText = '') {
+    const history = await window.electron.getHistory();
+
+    // Sort logic (newest first)
+    history.sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+    });
+
+    currentLoadedHistory = history.filter(h => !filterText || (h.text && h.text.toLowerCase().includes(filterText.toLowerCase())));
+
+    // Reset Pagination
+    historyDisplayLimit = 20;
+
+    renderHistoryList();
+}
+
+function renderHistoryList() {
     const container = document.getElementById('history-feed');
+    if (!container) return;
+
     container.innerHTML = '';
 
-    const history = await window.electron.getHistory();
-    const filtered = history.filter(h => !filterText || h.text.toLowerCase().includes(filterText.toLowerCase()));
+    const visible = currentLoadedHistory.slice(0, historyDisplayLimit);
 
-    filtered.reverse().forEach(entry => {
+    visible.forEach(entry => {
         const card = document.createElement('div');
         card.className = 'history-card';
 
-        const date = new Date(entry.timestamp);
+        const date = new Date(entry.timestamp || Date.now());
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateStr = date.toLocaleDateString();
 
         let badgeClass = 'standard';
-        if (entry.mode === 'email') badgeClass = 'email';
+        let displayMode = entry.modeName || entry.mode;
+
+        // Resolve Mode Name from allModes (loaded in loadInitialData)
+        if (typeof allModes !== 'undefined') {
+            const modeObj = allModes.find(m => m.id === entry.mode);
+            if (modeObj) {
+                if (!entry.modeName) displayMode = modeObj.name;
+                // Keep specific styling for system modes
+                if (['email', 'chat', 'jira'].includes(entry.mode)) badgeClass = entry.mode;
+            } else {
+                // Fallback for system IDs if not found in list or legacy
+                const names = { 'standard': 'Standard', 'email': 'E-Mail', 'chat': 'Chat', 'jira': 'Jira' };
+                if (names[entry.mode]) { displayMode = names[entry.mode]; badgeClass = entry.mode; }
+            }
+        }
 
         card.innerHTML = `
             <div class="hc-header">
-                <span class="hc-badge ${badgeClass}">${entry.mode}</span>
+                <span class="hc-badge ${badgeClass}">${displayMode}</span>
                 <span class="hc-time">${dateStr}, ${timeStr}</span>
             </div>
             <div class="hc-content">${entry.text}</div>
             <div class="hc-footer">
                 <div class="hc-meta">
                     <span>🌐 DE</span>
-                    <span>📄 ${entry.text.length} Zeichen</span>
+                    <span>📄 ${entry.text ? entry.text.length : 0} Zeichen</span>
                 </div>
                 <button class="btn-copy">Kopieren</button>
             </div>
@@ -670,6 +778,29 @@ async function loadHistory(filterText = '') {
 
         container.appendChild(card);
     });
+
+    // Load More Button
+    if (currentLoadedHistory.length > historyDisplayLimit) {
+        const btnContainer = document.createElement('div');
+        btnContainer.style.textAlign = 'center';
+        btnContainer.style.marginTop = '20px';
+        btnContainer.style.marginBottom = '20px';
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-secondary';
+        btn.innerText = `Mehr laden (${currentLoadedHistory.length - historyDisplayLimit} weitere)`;
+        btn.onclick = () => {
+            historyDisplayLimit += 20;
+            renderHistoryList();
+        };
+
+        btnContainer.appendChild(btn);
+        container.appendChild(btnContainer);
+    }
+
+    if (currentLoadedHistory.length === 0) {
+        container.innerHTML = '<div style="text-align:center; opacity:0.6; padding:20px;">Keine Einträge gefunden.</div>';
+    }
 }
 
 

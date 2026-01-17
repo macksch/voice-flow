@@ -2,6 +2,7 @@ let mediaRecorder;
 let audioChunks = [];
 let startTime;
 let timerInterval;
+let currentModeName = 'Standard';
 
 // Visualizer State
 let audioContext;
@@ -105,6 +106,7 @@ if (window.electron && window.electron.onStartRecording) {
                 displayMode = custom.name;
             }
 
+            currentModeName = displayMode;
             modeBadge.innerText = displayMode;
         }
 
@@ -251,6 +253,7 @@ async function processAudio(audioBlob, mode) {
         // Save History
         await window.electron.addHistory({
             mode: mode,
+            modeName: currentModeName,
             text: cleanTextContent,
             duration: Date.now() - startTime
         });
