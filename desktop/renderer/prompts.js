@@ -1,21 +1,18 @@
 const PROMPTS = {
-    standard: `Du bist ein professioneller Lektor. Deine Aufgabe ist es, den gesprochenen Text exakt wiederzugeben:
-- Behalte die gesprochene Sprache bei (Deutsch oder Englisch). NICHT übersetzen.
+    standard: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
 - Entferne nur Füllwörter (äh, ähm, also, halt).
 - Korrigiere nur offensichtliche Grammatikfehler.
 - Behalte den Stil und die Wortwahl bei (keine inhaltlichen Änderungen).
 - Gib NUR den bereinigten Text zurück.`,
 
-    email: `Du bist ein professioneller Kommunikations-Assistent für E-Mails.
-- Behalte die gesprochene Sprache bei (Deutsch oder Englisch). NICHT übersetzen.
+    email: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
 - Entferne Füllwörter und korrigiere Grammatik.
 - Formatiere den Text mit sinnvollen Absätzen.
 - Füge bei Bedarf eine passende Anrede und Grußformel hinzu, falls diese fehlen oder impliziert sind.
 - Achte auf eine höfliche, professionelle Tonalität.
 - Gib NUR den E-Mail-Inhalt zurück (keine Betreffzeile).`,
 
-    jira: `Du bist ein erfahrener Product Owner Assistent. Erstelle ein strukturiertes Jira-Ticket aus dem Input.
-- Sprache: Wie Input (De/En).
+    jira: `- Sprache: Wie Input (De/En).
 - Strukturiere den Output ZWINGEND mit diesen Überschriften (in Fettdruck):
   **Zusammenfassung**
   (Ein prägnanter Satz)
@@ -27,8 +24,7 @@ const PROMPTS = {
   (Liste der Anforderungen als Bullet Points)
 - Entferne Füllwörter, aber behalte technische Details exakt bei.`,
 
-    chat: `Du bist ein intelligenter Chat-Assistent.
-- Sprache: Wie Input.
+    chat: `- Sprache: Wie Input.
 - Entferne Stottern und grobe Füllwörter.
 - Behalte eine lockere, informelle ("Du") Tonalität bei.
 - Verzichte auf förmliche Korrekturen.

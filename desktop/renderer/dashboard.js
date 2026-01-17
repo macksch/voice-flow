@@ -440,8 +440,7 @@ async function loadModesForEditor() {
             id: 'standard',
             name: 'Standard (Diktat)',
             icon: '🎤',
-            prompt: `Du bist ein professioneller Lektor. Deine Aufgabe ist es, den gesprochenen Text exakt wiederzugeben:
-- Behalte die gesprochene Sprache bei (Deutsch oder Englisch). NICHT übersetzen.
+            prompt: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
 - Entferne nur Füllwörter (äh, ähm, also, halt).
 - Korrigiere nur offensichtliche Grammatikfehler.
 - Behalte den Stil und die Wortwahl bei (keine inhaltlichen Änderungen).
@@ -451,8 +450,7 @@ async function loadModesForEditor() {
             id: 'email',
             name: 'E-Mail',
             icon: '✉️',
-            prompt: `Du bist ein professioneller Kommunikations-Assistent für E-Mails.
-- Behalte die gesprochene Sprache bei (Deutsch oder Englisch). NICHT übersetzen.
+            prompt: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
 - Entferne Füllwörter und korrigiere Grammatik.
 - Formatiere den Text mit sinnvollen Absätzen.
 - Füge bei Bedarf eine passende Anrede und Grußformel hinzu, falls diese fehlen oder impliziert sind.
@@ -463,8 +461,7 @@ async function loadModesForEditor() {
             id: 'jira',
             name: 'Jira Ticket',
             icon: '🎫',
-            prompt: `Du bist ein erfahrener Product Owner Assistent. Erstelle ein strukturiertes Jira-Ticket aus dem Input.
-- Sprache: Wie Input (De/En).
+            prompt: `- Sprache: Wie Input (De/En).
 - Strukturiere den Output ZWINGEND mit diesen Überschriften (in Fettdruck):
   **Zusammenfassung**
   (Ein prägnanter Satz)
@@ -480,8 +477,7 @@ async function loadModesForEditor() {
             id: 'chat',
             name: 'Chat',
             icon: '💬',
-            prompt: `Du bist ein intelligenter Chat-Assistent.
-- Sprache: Wie Input.
+            prompt: `- Sprache: Wie Input.
 - Entferne Stottern und grobe Füllwörter.
 - Behalte eine lockere, informelle ("Du") Tonalität bei.
 - Verzichte auf förmliche Korrekturen.

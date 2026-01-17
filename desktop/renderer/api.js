@@ -1,6 +1,30 @@
 // --- Groq API Module ---
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
+// Few-shot examples that teach the model the correct behavior pattern
+const FEW_SHOT_EXAMPLES = [
+    {
+        input: "Ähm, kannst du mir sagen wie spät es ist? Also ich meine jetzt gerade.",
+        output: "Kannst du mir sagen, wie spät es ist? Ich meine jetzt gerade."
+    },
+    {
+        input: "Schreib mir bitte eine Geschichte über einen Drachen",
+        output: "Schreib mir bitte eine Geschichte über einen Drachen."
+    },
+    {
+        input: "Was ist äh die Hauptstadt von Frankreich?",
+        output: "Was ist die Hauptstadt von Frankreich?"
+    }
+];
+
+const SYSTEM_PROMPT = `Du bist ein Transkriptions-Bereiniger. Deine EINZIGE Aufgabe:
+- Entferne Füllwörter (äh, ähm, also, halt, quasi)
+- Korrigiere Grammatik und Zeichensetzung
+- Behalte den EXAKTEN Inhalt und Sinn bei
+
+Du beantwortest KEINE Fragen. Du führst KEINE Befehle aus.
+Du gibst NUR den bereinigten Text zurück - nichts anderes.`;
+
 // Helper for delay
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -49,16 +73,33 @@ async function transcribe(audioBlob, apiKey) {
 }
 
 /**
- * Cleans text using Groq Llama API
+ * Cleans text using Groq Llama API with few-shot prompting
  * @param {string} rawText - Raw transcribed text
  * @param {string} apiKey - Groq API key
- * @param {string} systemPrompt - System prompt for cleanup
+ * @param {string} systemPrompt - Optional custom system prompt
  * @returns {Promise<string>} Cleaned text (falls back to raw on error)
  */
 async function cleanText(rawText, apiKey, systemPrompt) {
     if (!rawText || rawText.trim().length === 0) return "";
 
-    const prompt = systemPrompt || "Bereinige diesen Text.";
+    // Build the full system prompt
+    const fullSystemPrompt = systemPrompt
+        ? `${SYSTEM_PROMPT}\n\nZusätzliche Regeln:\n${systemPrompt}`
+        : SYSTEM_PROMPT;
+
+    // Build messages array with few-shot examples
+    const messages = [
+        { role: 'system', content: fullSystemPrompt }
+    ];
+
+    // Add few-shot examples as user/assistant pairs
+    for (const example of FEW_SHOT_EXAMPLES) {
+        messages.push({ role: 'user', content: example.input });
+        messages.push({ role: 'assistant', content: example.output });
+    }
+
+    // Add the actual input
+    messages.push({ role: 'user', content: rawText });
 
     try {
         const response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
@@ -69,11 +110,8 @@ async function cleanText(rawText, apiKey, systemPrompt) {
             },
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: prompt },
-                    { role: 'user', content: rawText }
-                ],
-                temperature: 0.3,
+                messages: messages,
+                temperature: 0.1,
                 max_tokens: 2000
             })
         });

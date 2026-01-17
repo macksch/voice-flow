@@ -437,6 +437,15 @@ textarea.input-field {
     line-height: 1.5;
 }
 
+.editor-hint {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-bottom: 8px;
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
 .editor-header {
     display: flex;
     justify-content: space-between;
