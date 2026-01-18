@@ -117,14 +117,118 @@ function setFirstRunComplete() {
     return true;
 }
 
+function getLanguage() {
+    return store.get('language', 'auto');
+}
+
+function saveLanguage(lang) {
+    store.set('language', lang);
+    return true;
+}
+
+// --- User Initials ---
+function getUserInitials() {
+    return store.get('userInitials', 'VF');
+}
+
+function saveUserInitials(initials) {
+    store.set('userInitials', initials.toUpperCase().slice(0, 2));
+    return true;
+}
+
+// --- Auto Paste ---
+function getAutoPaste() {
+    return store.get('autoPaste', false);
+}
+
+function saveAutoPaste(enabled) {
+    store.set('autoPaste', enabled);
+    return true;
+}
+
+// --- Stats ---
+function getStats() {
+    // Default stats
+    return store.get('stats', { totalTranscriptions: 0, totalChars: 0, savedTime: 0 }); // savedTime in seconds?
+}
+
+function updateStats(charCount) {
+    const stats = getStats();
+    stats.totalTranscriptions = (stats.totalTranscriptions || 0) + 1;
+    stats.totalChars = (stats.totalChars || 0) + charCount;
+    // Estimate: 300 chars = 1 min speaking ~ 3-4 mins typing?
+    // Let's say typing speed is 40 wpm ~ 200 cpm.
+    // Time to type = characters / 200 (minutes). 
+    // Time saved = Time to type. (Simulated)
+    const timeSavedSeconds = (charCount / 200) * 60;
+    stats.savedTime = (stats.savedTime || 0) + timeSavedSeconds;
+
+    store.set('stats', stats);
+    return stats;
+}
+
+// function to delete a history entry only by ID
+function deleteHistoryEntry(id) {
+    const history = getHistory();
+    const newHistory = history.filter(h => h.id !== id);
+    store.set('transcription_history', newHistory);
+    return true;
+}
+
 module.exports = {
     saveApiKey, getApiKey,
     getHotkey, saveHotkey,
     getAudioDevice, saveAudioDevice,
     getTranscriptionMode, saveTranscriptionMode,
     getCustomModes, saveCustomModes,
-    getHistory, addToHistory, clearHistory,
+    getHistory, addToHistory, clearHistory, deleteHistoryEntry,
     getLaunchSettings, saveLaunchSettings,
     getOverlayPositionSettings, saveOverlayPositionSettings,
-    getIsFirstRun, setFirstRunComplete
+    getIsFirstRun, setFirstRunComplete,
+    getDictionary, saveDictionary, addDictionaryEntry, removeDictionaryEntry,
+    getModels, saveModels,
+    getLanguage, saveLanguage,
+    getUserInitials, saveUserInitials,
+    getAutoPaste, saveAutoPaste,
+    getStats, updateStats
 };
+
+// Dictionary
+function getDictionary() {
+    return store.get('custom_dictionary', []);
+}
+
+function saveDictionary(entries) {
+    store.set('custom_dictionary', entries);
+    return true;
+}
+
+function addDictionaryEntry(entry) {
+    const dict = getDictionary();
+    dict.push({
+        id: Date.now().toString(),
+        ...entry
+    });
+    store.set('custom_dictionary', dict);
+    return true;
+}
+
+function removeDictionaryEntry(id) {
+    const dict = getDictionary().filter(e => e.id !== id);
+    store.set('custom_dictionary', dict);
+    return true;
+}
+
+// Models
+function getModels() {
+    return {
+        transcription: store.get('model_transcription', 'whisper-large-v3'),
+        llm: store.get('model_llm', 'llama-3.3-70b-versatile')
+    };
+}
+
+function saveModels(models) {
+    if (models.transcription) store.set('model_transcription', models.transcription);
+    if (models.llm) store.set('model_llm', models.llm);
+    return true;
+}

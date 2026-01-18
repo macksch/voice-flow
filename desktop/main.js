@@ -13,14 +13,21 @@ const {
     getAudioDevice, saveAudioDevice,
     getTranscriptionMode, saveTranscriptionMode,
     getCustomModes, saveCustomModes,
-    getHistory, addToHistory, clearHistory,
+    getHistory, addToHistory, clearHistory, deleteHistoryEntry,
     getLaunchSettings, saveLaunchSettings,
     getOverlayPositionSettings, saveOverlayPositionSettings,
-    getIsFirstRun, setFirstRunComplete
+    getIsFirstRun, setFirstRunComplete,
+    getDictionary, saveDictionary, addDictionaryEntry, removeDictionaryEntry,
+    getModels, saveModels,
+    getLanguage, saveLanguage,
+    getUserInitials, saveUserInitials,
+    getAutoPaste, saveAutoPaste,
+    getStats, updateStats
 } = require('./config/store');
 
 let dashboardWindow = null;
 let overlayWindow = null;
+let switcherWindow = null;
 let tray = null;
 let isRecording = false;
 
@@ -62,6 +69,7 @@ function createOverlayWindow() {
     overlayWindow = new BrowserWindow({
         width: 460, // Increased width to prevent clipping
         height: 140,
+        focusable: false, // Prevent stealing focus from active text field
         x: width - 480,
         y: height - 160,
         frame: false,
@@ -78,6 +86,32 @@ function createOverlayWindow() {
     });
 
     overlayWindow.loadFile(path.join(__dirname, 'renderer/overlay.html'));
+}
+
+function createSwitcherWindow() {
+    switcherWindow = new BrowserWindow({
+        width: 600,
+        height: 400,
+        frame: false,
+        transparent: true,
+        resizable: false,
+        alwaysOnTop: true,
+        show: false,
+        skipTaskbar: true,
+        center: true,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+
+    switcherWindow.loadFile(path.join(__dirname, 'renderer/switcher.html'));
+
+    // Hide when losing focus
+    switcherWindow.on('blur', () => {
+        switcherWindow.hide();
+    });
 }
 
 function createTray() {
@@ -104,6 +138,35 @@ function showDashboard() {
     if (dashboardWindow) {
         dashboardWindow.show();
         dashboardWindow.focus();
+    }
+}
+
+function toggleSwitcher() {
+    if (!switcherWindow) return;
+
+    if (switcherWindow.isVisible()) {
+        switcherWindow.hide();
+    } else {
+        // Refresh modes before showing
+        const customModes = getCustomModes() || [];
+        const activeId = getTranscriptionMode();
+
+        // System Modes (always present)
+        const systemModeIds = ['standard', 'email', 'jira', 'chat'];
+        const systemModes = [
+            { id: 'standard', name: 'Standard', description: 'Rohe Transkription', icon: '🎤' },
+            { id: 'email', name: 'E-Mail', description: 'Für E-Mails formatiert', icon: '✉️' },
+            { id: 'jira', name: 'Jira Ticket', description: 'Zusammenfassung & Akzeptanzkriterien', icon: '🎫' },
+            { id: 'chat', name: 'Chat', description: 'Locker & informell', icon: '💬' }
+        ];
+
+        // Filter out any custom modes that override system IDs (to prevent duplicates)
+        const filteredCustomModes = customModes.filter(m => !systemModeIds.includes(m.id));
+        const allModes = [...systemModes, ...filteredCustomModes];
+
+        switcherWindow.webContents.send('update-modes', { modes: allModes, activeModeId: activeId });
+        switcherWindow.show();
+        switcherWindow.focus();
     }
 }
 
@@ -151,7 +214,9 @@ function toggleRecording() {
         overlayWindow.setSize(460, 140); // Match new width
         overlayWindow.setPosition(Math.round(x), Math.round(y));
         overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-        overlayWindow.show();
+        overlayWindow.setPosition(Math.round(x), Math.round(y));
+        overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+        overlayWindow.showInactive(); // Show without activating/focusing
         overlayWindow.webContents.send('start-recording');
         if (tray) tray.setImage(path.join(__dirname, 'assets/icons/tray-recording.png'));
     } else {
@@ -170,6 +235,11 @@ function registerAllHotkeys() {
     try {
         globalShortcut.register(stored, () => toggleRecording());
     } catch (e) { console.error('Global Hotkey registration failed', e); }
+
+    // Mode Switcher Hotkey
+    try {
+        globalShortcut.register('Alt+M', () => toggleSwitcher());
+    } catch (e) { console.error('Switcher Hotkey registration failed', e); }
 
     // Custom Mode Hotkeys
     const modes = getCustomModes() || [];
@@ -190,6 +260,7 @@ function registerAllHotkeys() {
 app.whenReady().then(() => {
     createDashboardWindow();
     createOverlayWindow();
+    createSwitcherWindow();
     createTray();
     registerAllHotkeys();
 
@@ -203,6 +274,7 @@ app.whenReady().then(() => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createDashboardWindow();
             createOverlayWindow();
+            createSwitcherWindow();
         } else {
             showDashboard();
         }
@@ -218,6 +290,25 @@ app.on('will-quit', () => {
 });
 
 // --- IPC Handlers ---
+// Switcher Control
+ipcMain.on('switch-mode', (_, modeId) => {
+    saveTranscriptionMode(modeId);
+    if (dashboardWindow) dashboardWindow.webContents.send('mode-changed', modeId);
+    if (switcherWindow) switcherWindow.hide();
+
+    // Update Tray
+    try {
+        const modes = getCustomModes();
+        const mode = modes.find(m => m.id === modeId);
+        const name = mode ? mode.name : 'Standard';
+        if (tray) tray.setToolTip(`VoiceFlow: ${name}`);
+    } catch (e) { }
+});
+
+ipcMain.on('hide-switcher', () => {
+    if (switcherWindow) switcherWindow.hide();
+});
+
 // API Key
 ipcMain.handle('get-api-key', () => getApiKey());
 ipcMain.handle('save-api-key', (_, key) => saveApiKey(key));
@@ -254,6 +345,11 @@ ipcMain.handle('clear-history', () => {
     if (dashboardWindow) dashboardWindow.webContents.send('history-updated');
     return true;
 });
+ipcMain.handle('delete-history-entry', (_, id) => {
+    deleteHistoryEntry(id);
+    if (dashboardWindow) dashboardWindow.webContents.send('history-updated');
+    return true;
+});
 
 // Launch Settings
 ipcMain.handle('get-launch-settings', () => getLaunchSettings() || { openAtLogin: false, openAsHidden: false });
@@ -275,6 +371,32 @@ ipcMain.handle('save-overlay-position', (_, pos) => saveOverlayPositionSettings(
 // First Run / Tutorial
 ipcMain.handle('get-is-first-run', () => getIsFirstRun());
 ipcMain.handle('set-first-run-complete', () => setFirstRunComplete());
+
+// Dictionary
+ipcMain.handle('get-dictionary', () => getDictionary());
+ipcMain.handle('save-dictionary', (_, entries) => saveDictionary(entries));
+ipcMain.handle('add-dictionary-entry', (_, entry) => addDictionaryEntry(entry));
+ipcMain.handle('remove-dictionary-entry', (_, id) => removeDictionaryEntry(id));
+
+// Models
+ipcMain.handle('get-models', () => getModels());
+ipcMain.handle('save-models', (_, models) => saveModels(models));
+
+// Language
+ipcMain.handle('get-language', () => getLanguage());
+ipcMain.handle('save-language', (_, lang) => saveLanguage(lang));
+
+// User Initials
+ipcMain.handle('get-user-initials', () => getUserInitials());
+ipcMain.handle('save-user-initials', (_, initials) => saveUserInitials(initials));
+
+// Auto Paste
+ipcMain.handle('get-auto-paste', () => getAutoPaste());
+ipcMain.handle('save-auto-paste', (_, val) => saveAutoPaste(val));
+
+// Stats
+ipcMain.handle('get-stats', () => getStats());
+ipcMain.handle('update-stats', (_, count) => updateStats(count));
 
 // App Info
 ipcMain.handle('get-app-version', () => app.getVersion());
@@ -307,6 +429,12 @@ ipcMain.handle('copy-to-clipboard', (_, text) => {
 });
 
 ipcMain.handle('paste-result', () => {
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+    // If VoiceFlow overlay is focused, paste likely failed (user clicked it or it stole focus)
+    if (focusedWindow === overlayWindow) {
+        return { success: false, reason: 'overlay-focused' };
+    }
+
     // Send Ctrl+V using PowerShell (compatible with non-admin/admin)
     const { spawn } = require('child_process');
     const ps = spawn('powershell', [
@@ -316,7 +444,7 @@ ipcMain.handle('paste-result', () => {
     ]);
 
     ps.on('error', (err) => console.error('Auto-Paste failed:', err));
-    return true;
+    return { success: true }; // Return object to match failure schema
 });
 
 ipcMain.handle('process-audio', async (_, audioBuffer) => {
@@ -333,6 +461,18 @@ ipcMain.on('cancel-recording', () => {
 
 ipcMain.on('close-overlay', () => {
     if (overlayWindow) overlayWindow.hide();
+});
+
+ipcMain.handle('show-toast', (_, { message, type }) => {
+    // Forward to dashboard if available
+    if (dashboardWindow) {
+        dashboardWindow.webContents.send('show-toast', { message, type });
+        // Also inject into dashboard JS context? No, dashboard listens for events or we can execute JS.
+        // Actually dashboard.js has no IPC listener for 'show-toast', it defines the function globally.
+        // But we can execute script.
+        dashboardWindow.webContents.executeJavaScript(`if(window.showToast) window.showToast('${message.replace(/'/g, "\\'")}', '${type}');`).catch(() => { });
+    }
+    return true;
 });
 
 // --- Updater Logic ---

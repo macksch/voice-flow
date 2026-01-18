@@ -69,17 +69,41 @@ Um eine installierbare Version der Anwendung für Ihr Betriebssystem zu erstelle
 ### Paket erstellen (Package)
 Erstellt ein ausführbares Paket ohne Installer:
 ```bash
+cd desktop
 npm run package
 ```
 
 ### Installer erstellen (Make/Dist)
 Erstellt die finalen Installer (z.B. `.exe` für Windows, `.dmg` für macOS):
 ```bash
+cd desktop
 npm run dist
 ```
 *Hinweis: `npm run dist` führt zusätzlich Skripte zur Icon-Optimierung aus.*
 
-Die erstellten Dateien finden Sie im Ordner `desktop/dist` oder `desktop/out`.
+Die erstellten Dateien finden Sie im Ordner `desktop/dist`.
+
+### 🚀 GitHub Release Flow (v0.3.3)
+
+Um eine neue Version auf GitHub zu veröffentlichen:
+
+1.  **Version prüfen**: Sicherstellen, dass die `version` in `desktop/package.json` aktuell ist (z.B. `0.3.3`).
+2.  **Build ausführen**:
+    ```bash
+    cd desktop
+    npm run dist
+    ```
+3.  **Änderungen committen & pushen**:
+    ```bash
+    git add .
+    git commit -m "chore(release): v0.3.3"
+    git push origin main
+    ```
+4.  **GitHub Release erstellen**:
+    *   Gehen Sie auf GitHub zu **Releases** → **Draft a new release**.
+    *   Erstellen Sie ein neues Tag (z.B. `v0.3.3`).
+    *   Laden Sie die Installer aus `desktop/dist/` hoch (z.B. `VoiceFlow-Setup-0.3.3.exe`).
+    *   Veröffentlichen Sie den Release.
 
 ## 🧪 Testing
 

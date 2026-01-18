@@ -25,9 +25,11 @@ contextBridge.exposeInMainWorld('electron', {
     saveCustomModes: (modes) => ipcRenderer.invoke('save-custom-modes', modes),
 
     // History
+    // History
     getHistory: () => ipcRenderer.invoke('get-history'),
     addHistory: (entry) => ipcRenderer.invoke('add-history', entry),
     clearHistory: () => ipcRenderer.invoke('clear-history'),
+    deleteHistoryEntry: (id) => ipcRenderer.invoke('delete-history-entry', id),
 
     // Launch Settings (Auto-Start)
     getLaunchSettings: () => ipcRenderer.invoke('get-launch-settings'),
@@ -59,6 +61,39 @@ contextBridge.exposeInMainWorld('electron', {
 
     // App Info
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-    checkApiConnection: (apiKey) => ipcRenderer.invoke('check-api-connection', apiKey)
+    checkApiConnection: (apiKey) => ipcRenderer.invoke('check-api-connection', apiKey),
+
+    // Dictionary
+    getDictionary: () => ipcRenderer.invoke('get-dictionary'),
+    saveDictionary: (entries) => ipcRenderer.invoke('save-dictionary', entries),
+    addDictionaryEntry: (entry) => ipcRenderer.invoke('add-dictionary-entry', entry),
+    removeDictionaryEntry: (id) => ipcRenderer.invoke('remove-dictionary-entry', id),
+
+    // Models
+    getModels: () => ipcRenderer.invoke('get-models'),
+    saveModels: (models) => ipcRenderer.invoke('save-models', models),
+
+    // Language
+    getLanguage: () => ipcRenderer.invoke('get-language'),
+    saveLanguage: (lang) => ipcRenderer.invoke('save-language', lang),
+
+    // User Initials
+    getUserInitials: () => ipcRenderer.invoke('get-user-initials'),
+    saveUserInitials: (initials) => ipcRenderer.invoke('save-user-initials', initials),
+
+    getAutoPaste: () => ipcRenderer.invoke('get-auto-paste'),
+    saveAutoPaste: (enabled) => ipcRenderer.invoke('save-auto-paste', enabled),
+
+    // Stats
+    getStats: () => ipcRenderer.invoke('get-stats'),
+    updateStats: (charCount) => ipcRenderer.invoke('update-stats', charCount),
+
+    // Switcher
+    switchMode: (modeId) => ipcRenderer.send('switch-mode', modeId),
+    hideSwitcher: () => ipcRenderer.send('hide-switcher'),
+    onUpdateModes: (callback) => ipcRenderer.on('update-modes', (event, data) => callback(data)),
+
+    // Mode Changed (Dashboard)
+    onModeChanged: (callback) => ipcRenderer.on('mode-changed', (event, modeId) => callback(modeId))
 });
 

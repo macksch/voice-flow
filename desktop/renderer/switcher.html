@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceFlow Switcher</title>
+    <!-- CSP -->
+    <meta http-equiv="Content-Security-Policy"
+        content="script-src 'self'; font-src 'self' https://fonts.gstatic.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline';">
+    <link rel="stylesheet" href="dashboard.css">
+    <style>
+        body {
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .switcher-header {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .mode-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .mode-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-item:hover,
+        .mode-item.active {
+            background: var(--bg-input);
+            border-color: var(--primary);
+        }
+
+        .mode-item.active {
+            box-shadow: 0 0 10px rgba(112, 0, 255, 0.2);
+        }
+
+        .mode-icon {
+            font-size: 20px;
+        }
+
+        .mode-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mode-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .mode-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="switcher-header">Modus wählen</div>
+    <div id="mode-list" class="mode-list">
+        <!-- Injected via JS -->
+    </div>
+
+    <script src="switcher.js"></script>
+</body>
+
+</html>

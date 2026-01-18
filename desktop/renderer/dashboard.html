@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';">
     <title>VoiceFlow Dashboard</title>
     <link rel="stylesheet" href="dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -54,53 +56,106 @@
             </div>
             <div class="user-actions">
                 <button class="icon-btn" id="btn-notifications">🔔</button>
-                <div class="avatar">MO</div>
+                <div class="avatar" id="user-avatar">VF</div>
             </div>
         </div>
 
         <!-- VIEW: Home / Dashboard -->
         <div id="view-home" class="view">
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon stats-icon-1">🎤</div>
-                    <div class="stat-label">Gesamt-Aufnahmen</div>
-                    <div class="stat-value" id="stat-total">0</div>
-                    <div class="stat-trend">
-                        <div class="stat-trend-fill" style="width: 45%"></div>
+            <!-- Top Row: Stats & Active Mode -->
+            <div class="dashboard-top-row">
+                <!-- Stats Container -->
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon-wrapper icon-mic">🎤</div>
+                            <span class="stat-change positive">+12%</span>
+                        </div>
+                        <div class="stat-label">Gesamt-Aufnahmen</div>
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 45%; background: var(--accent);"></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon-wrapper icon-text">📄</div>
+                            <span class="stat-change positive">+5%</span>
+                        </div>
+                        <div class="stat-label">Zeichen verarbeitet</div>
+                        <div class="stat-value" id="stat-words">0</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 70%; background: #9d4edd;"></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon-wrapper icon-time">⏱️</div>
+                            <span class="stat-change negative">-2%</span>
+                        </div>
+                        <div class="stat-label">Zeit gespart</div>
+                        <div class="stat-value" id="stat-time">0m</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 60%; background: #ff9100;"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon stats-icon-2">📄</div>
-                    <div class="stat-label">Wörter verarbeitet</div>
-                    <div class="stat-value" id="stat-words">0</div>
-                    <div class="stat-trend">
-                        <div class="stat-trend-fill" style="width: 70%"></div>
-                    </div>
-                </div>
-
-                <div class="stat-card highlight">
-                    <div class="stat-icon">✨</div>
-                    <div class="stat-label">Aktiver Modus</div>
-                    <div class="stat-value" id="stat-active-mode">Standard</div>
-                    <div class="stat-label" style="opacity: 0.8">Drücke Hotkey zum Starten</div>
+                <!-- Active Mode Card -->
+                <div class="active-mode-card">
+                    <div class="am-icon">⚡</div>
+                    <div class="am-label">AKTIVER MODUS</div>
+                    <div class="am-value" id="dashboard-active-mode">Standard</div>
+                    <button class="btn-light" onclick="document.querySelector('[data-tab=modes]').click()">Modus
+                        ändern</button>
                 </div>
             </div>
 
-            <!-- Activity Chart -->
-            <div class="chart-section">
-                <div class="chart-header">
+            <!-- Activity Table Section -->
+            <div class="activity-section">
+                <div class="section-header">
                     <h2>Aktivitätsverlauf</h2>
-                    <select style="background:none; border:none; color:var(--text-secondary); cursor:pointer;">
-                        <option>Letzte 7 Tage</option>
-                    </select>
+                    <div class="section-actions">
+                        <select class="dropdown-select">
+                            <option>Letzte 7 Tage</option>
+                        </select>
+                        <button class="btn-primary-small" onclick="window.electron.toggleRecording()">+ Neue
+                            Aufnahme</button>
+                    </div>
                 </div>
-                <div class="chart-placeholder" id="activity-chart">
-                    <!-- Bars injected by JS -->
+
+                <div class="table-wrapper">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>STATUS</th>
+                                <th>TRANSKRIPTION</th>
+                                <th>DATUM & ZEIT</th>
+                                <th>LÄNGE</th>
+                                <th>AKTIONEN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-table-body">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination / Footer if needed -->
+                <div class="table-footer" id="activity-table-footer">
+                    <div class="pagination-info">
+                        Zeige <span id="activity-count">0</span> von <span id="total-count">0</span> Transkriptionen
+                    </div>
+                    <div class="pagination-btns">
+                        <button class="btn-icon-small" disabled title="Vorseite">❮❮</button>
+                        <button class="btn-icon-small" disabled title="Nächste Seite">❯❯</button>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- VIEW: Stats REMOVED -->
 
         <!-- VIEW: Modes Editor -->
         <div id="view-modes" class="view hidden">
@@ -181,65 +236,167 @@
 
         <!-- VIEW: Settings -->
         <div id="view-settings" class="view hidden">
-            <div class="stat-card" style="max-width: 600px;">
-                <h2>Einstellungen</h2>
-                <br>
-                <div class="form-group">
-                    <label>Groq API Key</label>
-                    <input type="password" id="api-key-input" class="input-field">
-                </div>
+            <h2 class="view-title">Einstellungen</h2>
+            <div class="settings-layout">
 
-                <div class="form-group">
-                    <label>Mikrofon</label>
-                    <select id="audio-device-select" class="input-field"></select>
-                </div>
-
-                <div class="form-group">
-                    <label>Globaler Hotkey</label>
-                    <input type="text" id="hotkey-input" class="input-field" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Overlay Position</label>
-                    <select id="overlay-pos-select" class="input-field">
-                        <option value="bottom-right">Bottom Right (Standard)</option>
-                        <option value="bottom-center">Bottom Center</option>
-                        <option value="top-right">Top Right</option>
-                        <option value="top-center">Top Center</option>
-                    </select>
-                </div>
-
-                <div class="form-group" style="display:flex; flex-direction:column; gap:8px;">
-                    <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="check-autostart">
-                        <span>VoiceFlow beim Systemstart starten</span>
-                    </label>
-                    <label style="cursor:pointer; display:flex; align-items:center; gap:8px; opacity: 0.7;">
-                        <input type="checkbox" id="check-startmin">
-                        <span>Minimiert starten (nur Tray)</span>
-                    </label>
-                </div>
-
-                <div class="form-group" style="padding-top: 16px; border-top: 1px solid var(--border);">
-                    <h3>Software Update</h3>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-                        <div id="update-status" style="font-size:12px; color:var(--text-secondary);">Version wird
-                            geladen...</div>
-                        <button class="btn-secondary" id="btn-check-updates"
-                            style="padding:6px 12px; font-size:12px;">Nach Updates suchen</button>
+                <!-- Sec: API & Sicherheit -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🔑</span> API & Sicherheit
                     </div>
-                    <div id="update-progress-bar"
-                        style="height:4px; width:100%; background:var(--bg-input); margin-top:8px; border-radius:2px; display:none;">
-                        <div id="update-progress-fill"
-                            style="height:100%; width:0%; background:var(--primary); border-radius:2px;"></div>
+                    <div class="setting-body">
+                        <div class="form-group">
+                            <label>Groq API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="api-key-input" class="input-field" placeholder="gsk_...">
+                                <button class="btn-icon-inside" id="toggle-api-visibility">👁️</button>
+                            </div>
+                            <small class="hint">Wird lokal verschlüsselt gespeichert.</small>
+                        </div>
                     </div>
-                    <button class="btn-primary hidden" id="btn-restart-update"
-                        style="width:100%; margin-top:12px;">Restart & Install</button>
                 </div>
 
-                <div class="form-group" style="margin-top:24px;">
-                    <button class="btn-create" id="save-settings-btn" style="width: auto;">Speichern</button>
+                <!-- Sec: Hardware & Eingabe -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🎙️</span> Hardware & Eingabe
+                    </div>
+                    <div class="setting-body">
+                        <div class="form-group">
+                            <label>Mikrofon</label>
+                            <select id="audio-device-select" class="input-field"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Globaler Hotkey</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="hotkey-input" class="input-field" readonly>
+                                <button class="btn-secondary small"
+                                    style="position:absolute; right:8px; top:4px;">Ändern</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Deine Initialen (Avatar)</label>
+                            <input type="text" id="user-initials-input" class="input-field" maxlength="2"
+                                placeholder="VF" style="width: 80px; text-transform: uppercase; text-align: center;">
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Sec: Sprache & KI -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🧠</span> Sprache & KI-Modelle
+                    </div>
+                    <div class="setting-body">
+                        <div class="form-group">
+                            <label>Sprache (Transkription)</label>
+                            <select id="languageSelect" class="input-field">
+                                <option value="auto">Automatisch (Erkennen)</option>
+                                <option value="de">Deutsch (de)</option>
+                                <option value="en">Englisch (en)</option>
+                                <option value="fr">Französisch (fr)</option>
+                                <option value="es">Spanisch (es)</option>
+                                <option value="it">Italienisch (it)</option>
+                                <option value="nl">Niederländisch (nl)</option>
+                                <option value="pt">Portugiesisch (pt)</option>
+                                <option value="ru">Russisch (ru)</option>
+                                <option value="ja">Japanisch (ja)</option>
+                                <option value="zh">Chinesisch (zh)</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group-inline">
+                            <div class="form-group half">
+                                <label>Spracherkennung</label>
+                                <select id="model-transcription" class="input-field">
+                                    <option value="whisper-large-v3">Whisper Large V3</option>
+                                    <option value="whisper-large-v3-turbo">Whisper Large V3 Turbo</option>
+                                </select>
+                            </div>
+                            <div class="form-group half">
+                                <label>Textverarbeitung (LLM)</label>
+                                <select id="model-llm" class="input-field">
+                                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+                                    <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
+                                    <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sec: Wörterbuch -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">📖</span> Wörterbuch
+                        <span class="setting-badge" id="dict-count-badge">0 Einträge</span>
+                    </div>
+                    <div class="setting-body">
+                        <div id="dictionary-list" class="dictionary-list"></div>
+                        <div class="add-entry-form">
+                            <input type="text" id="dict-spoken" placeholder="Gesprochen (z.B. 'giro')">
+                            <input type="text" id="dict-written" placeholder="Geschrieben (z.B. 'JIRA')">
+                            <button id="add-dict-btn" class="btn-primary-small">+ Hinzufügen</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sec: System -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">⚙️</span> System
+                    </div>
+                    <div class="setting-body">
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="check-autostart">
+                                <span>VoiceFlow beim Systemstart starten</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="check-startmin">
+                                <span>Minimiert starten (nur Tray)</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="check-autopaste">
+                                <span>Text automatisch einfügen (Strg+V)</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-top:16px;">
+                            <label>Overlay Position</label>
+                            <select id="overlay-pos-select" class="input-field" style="width:50%;">
+                                <option value="bottom-right">Bottom Right</option>
+                                <option value="bottom-center">Bottom Center</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="top-center">Top Center</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sec: Update -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🔄</span> Software Update
+                    </div>
+                    <div class="setting-body">
+                        <div class="update-ui">
+                            <div id="update-status">Version wird geladen...</div>
+                            <button class="btn-secondary small" id="btn-check-updates">Prüfen</button>
+                        </div>
+                        <div id="update-progress-bar" class="progress-bar hidden">
+                            <div id="update-progress-fill" class="progress-fill"></div>
+                        </div>
+                        <button class="btn-primary hidden" id="btn-restart-update"
+                            style="width:100%; margin-top:12px;">Neustarten & Installieren</button>
+                    </div>
+                </div>
+
+                <!-- Footer Save -->
+                <div class="settings-footer">
+                    <button class="btn-create" id="save-settings-btn">Einstellungen speichern</button>
+                </div>
+
             </div>
         </div>
 

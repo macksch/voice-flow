@@ -1,7 +1,7 @@
 {
   "name": "voiceflow",
   "productName": "VoiceFlow",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Multi-platform dictation suite with AI integration",
   "main": "main.js",
   "repository": {
@@ -14,7 +14,11 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "dist": "node scripts/fix_icon.js && electron-builder",
-    "test": "vitest"
+    "test": "vitest",
+    "audit": "npm audit --audit-level=high",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "keywords": [
     "dictation",
@@ -56,8 +60,12 @@
     "@electron-forge/maker-zip": "^7.2.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.0.0",
     "jsdom": "^27.4.0",
     "png-to-ico": "^3.0.1",
+    "prettier": "^3.8.0",
     "sharp": "^0.34.5",
     "vitest": "^4.0.17"
   },

@@ -14,6 +14,12 @@ const timerElement = document.getElementById('timer');
 const cancelBtn = document.getElementById('cancel-btn');
 const modeBadge = document.getElementById('current-mode');
 
+// Pending UI Elements
+const recordingPill = document.getElementById('recording-pill');
+const pendingPill = document.getElementById('pending-pill');
+const copyPendingBtn = document.getElementById('copy-pending-btn');
+const closePendingBtn = document.getElementById('close-pending-btn');
+
 // --- Visualizer Logic ---
 function initVisualizer() {
     const visualizer = document.getElementById('visualizer');
@@ -81,6 +87,10 @@ if (window.electron && window.electron.onStartRecording) {
 
         // Reset UI
         if (timerElement) timerElement.innerText = "00:00";
+        // Ensure recording UI is shown
+        if (recordingPill) recordingPill.style.display = 'flex';
+        if (pendingPill) pendingPill.style.display = 'none';
+
         initVisualizer();
 
         // Get Settings
@@ -148,7 +158,8 @@ if (window.electron && window.electron.onStartRecording) {
 
         } catch (err) {
             console.error('Mic Error:', err);
-            alert('Mikrofon Fehler: ' + err.message);
+            // alert('Mikrofon Fehler: ' + err.message); // Blocking
+            window.electron.showToast('Mikrofon Fehler: ' + err.message, 'error');
             window.electron.closeOverlay();
         }
     });
@@ -220,12 +231,18 @@ async function processAudio(audioBlob, mode) {
             modeBadge.style.color = "#FFD700";
         }
 
-        if (typeof transcribe === 'undefined') {
+        if (typeof window.transcribe === 'undefined') {
             throw new Error('API module not loaded');
         }
 
+        // Get Models, Dictionary & Language
+        const models = await window.electron.getModels();
+        const dictionary = await window.electron.getDictionary() || [];
+        const language = await window.electron.getLanguage() || 'de';
+
         // Transcribe
-        const rawText = await transcribe(audioBlob, apiKey);
+        const rawText = await window.transcribe(audioBlob, apiKey, models.transcription, language);
+        console.log('Transkription:', rawText);
 
         if (modeBadge) modeBadge.innerText = "Cleaning...";
 
@@ -241,29 +258,73 @@ async function processAudio(audioBlob, mode) {
             }
         }
 
-        // Clean
-        const cleanTextContent = await cleanText(rawText, apiKey, systemPrompt);
+        // Clean with Dictionary and Model
+        const finalResult = await window.cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm);
+        console.log('Final:', finalResult);
 
-        // Copy
-        await window.electron.copyToClipboard(cleanTextContent);
+        // Copy to clipboard
+        await window.electron.copyToClipboard(finalResult);
 
-        // Auto-Paste
-        await window.electron.pasteResult();
+        // Update Stats
+        if (finalResult && finalResult.length > 0) {
+            await window.electron.updateStats(finalResult.length);
+        }
 
-        // Save History
+        // Add to History
         await window.electron.addHistory({
             mode: mode,
-            modeName: currentModeName,
-            text: cleanTextContent,
-            duration: Date.now() - startTime
+            original: rawText,
+            result: finalResult,
+            timestamp: new Date().toISOString()
         });
 
-        // Close
-        window.electron.closeOverlay();
+        // Auto Paste (Dictation Mode)
+        const autoPaste = await window.electron.getAutoPaste();
+        if (autoPaste) {
+            setTimeout(async () => {
+                await window.electron.pasteResult();
+                window.electron.closeOverlay();
+            }, 100);
+        } else {
+            window.electron.closeOverlay();
+        }
 
     } catch (error) {
         console.error('Processing failed:', error);
-        alert('Fehler: ' + error.message);
+        // Show error in dashboard toast
+        window.electron.showToast('Fehler: ' + error.message, 'error');
         window.electron.closeOverlay();
     }
+}
+
+// --- Pending Overlay Logic ---
+let currentPendingText = '';
+
+function showPendingOverlay(text) {
+    currentPendingText = text;
+    if (recordingPill) recordingPill.style.display = 'none';
+    if (pendingPill) {
+        pendingPill.style.display = 'flex';
+        // Force layout update if needed
+    }
+}
+
+if (copyPendingBtn) {
+    copyPendingBtn.addEventListener('click', async () => {
+        if (currentPendingText) {
+            await window.electron.copyToClipboard(currentPendingText);
+            // Flash button or text?
+            copyPendingBtn.innerText = 'Kopiert!';
+            setTimeout(() => {
+                copyPendingBtn.innerText = 'Kopieren';
+                window.electron.closeOverlay();
+            }, 800);
+        }
+    });
+}
+
+if (closePendingBtn) {
+    closePendingBtn.addEventListener('click', () => {
+        window.electron.closeOverlay();
+    });
 }

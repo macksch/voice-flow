@@ -53,6 +53,21 @@ const PRESET_ICONS = [
 document.addEventListener('DOMContentLoaded', async () => {
     // Always attach listeners first so UI works even if data fails
     attachEventListeners();
+    initSettingsListeners();
+
+    // Listen for mode changes from Switcher (Alt+M)
+    if (window.electron && window.electron.onModeChanged) {
+        window.electron.onModeChanged(async (modeId) => {
+            console.log('Mode changed via Switcher:', modeId);
+            currentActiveMode = modeId;
+            updateActiveModeDisplay();
+            // Refresh mode list if currently viewing modes
+            const modesView = document.getElementById('view-modes');
+            if (modesView && !modesView.classList.contains('hidden')) {
+                await loadModesForEditor();
+            }
+        });
+    }
 
     try {
         await loadInitialData();
@@ -136,7 +151,7 @@ async function loadInitialData() {
     await loadModesForEditor(); // Load modes first for Name resolution
     await loadStats();
     await loadHistory();
-    await loadSettings();
+    await loadSettings(); // Changed to await
     await checkApiStatus(); // Check on load
     currentActiveMode = await window.electron.getTranscriptionMode() || 'standard';
 
@@ -180,8 +195,8 @@ function attachEventListeners() {
                 loadModesForEditor();
             } else if (item.dataset.tab === 'history') {
                 titleEl.textContent = 'Verlauf';
-                subEl.textContent = 'Überprüfe und verwalte deine Transkripte.';
-                loadHistory();
+                subEl.textContent = 'Deine letzten Transkriptionen.';
+                renderHistoryList();
             } else if (item.dataset.tab === 'settings') {
                 titleEl.textContent = 'Einstellungen';
                 subEl.textContent = 'Systemkonfiguration.';
@@ -429,77 +444,161 @@ async function deleteCustomMode(id) {
 
 // --- DASHBOARD / STATS ---
 async function loadStats() {
-    const history = await window.electron.getHistory();
-    document.getElementById('stat-total').innerText = history.length;
+    try {
+        const stats = await window.electron.getStats();
+        // Update Stats Cards
+        const elTotal = document.getElementById('stat-total');
+        const elWords = document.getElementById('stat-words');
+        const elTime = document.getElementById('stat-time');
 
-    const words = history.reduce((acc, curr) => acc + (curr.text ? curr.text.split(' ').length : 0), 0);
-    document.getElementById('stat-words').innerText = (words / 1000).toFixed(1) + 'k';
+        if (elTotal) elTotal.innerText = stats.totalTranscriptions || 0;
+        if (elWords) elWords.innerText = (stats.totalChars || 0).toLocaleString('de-DE');
+        if (elTime) {
+            const mins = Math.round((stats.savedTime || 0) / 60);
+            const val = (stats.savedTime || 0) > 3600
+                ? `${((stats.savedTime || 0) / 3600).toFixed(1)} h`
+                : `${mins} m`;
+            elTime.innerText = val;
+        }
 
-    updateActiveModeDisplay();
-    renderActivityChart(history);
+        // Render Activity Table
+        const history = await window.electron.getHistory();
+        renderActivityTable(history);
+        updateActiveModeDisplay();
+    } catch (e) {
+        console.warn('Stats load failed', e);
+    }
 }
 
 function updateActiveModeDisplay() {
-    const activeEl = document.getElementById('stat-active-mode');
+    const activeLabel = document.getElementById('dashboard-active-mode');
+    const activeIconContainer = document.querySelector('.active-mode-card .am-icon');
 
-    let modeName = currentActiveMode;
-    const sysModes = { 'standard': 'Standard', 'email': 'E-Mail', 'jira': 'Jira', 'chat': 'Chat' };
+    // Default Icons
+    const modeIcons = {
+        'standard': '🎤',
+        'email': '✉️',
+        'jira': '🎫',
+        'chat': '💬'
+    };
 
-    if (sysModes[currentActiveMode]) modeName = sysModes[currentActiveMode];
-    else {
-        window.electron.getCustomModes().then(custom => {
-            const found = custom.find(m => m.id === currentActiveMode);
+    window.electron.getCustomModes().then(customModes => {
+        let displayOne = "Standard";
+        let iconOne = "🎤";
+
+        // Check if system mode
+        if (modeIcons[currentActiveMode]) {
+            displayOne = currentActiveMode.charAt(0).toUpperCase() + currentActiveMode.slice(1);
+            if (currentActiveMode === 'jira') displayOne = 'Jira Ticket';
+            iconOne = modeIcons[currentActiveMode];
+        } else {
+            // Check custom mode
+            const found = customModes.find(m => m.id === currentActiveMode);
             if (found) {
-                activeEl.innerText = found.name;
+                displayOne = found.name;
+                iconOne = found.icon || '✨';
             } else {
-                activeEl.innerText = currentActiveMode; // Fallback
+                displayOne = "Unbekannt";
             }
-        });
-    }
-    // Set immediate text if known (for system modes)
-    if (sysModes[currentActiveMode]) activeEl.innerText = modeName;
+        }
+
+        if (activeLabel) activeLabel.innerText = displayOne;
+        if (activeIconContainer) activeIconContainer.innerText = iconOne;
+    });
 }
 
-function renderActivityChart(history) {
-    const container = document.getElementById('activity-chart');
-    if (!container || !history) return;
+function renderActivityTable(history) {
+    const tbody = document.getElementById('activity-table-body');
+    const countLabel = document.getElementById('activity-count');
+    const totalLabel = document.getElementById('total-count');
 
-    container.innerHTML = '';
+    if (!tbody) return;
 
-    // Prepare last 7 days (YYYY-MM-DD)
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        days.push(d.toISOString().split('T')[0]);
+    tbody.innerHTML = '';
+
+    // Sort Newest First
+    history.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
+    const limit = 7;
+    const visible = history.slice(0, limit);
+
+    if (countLabel) countLabel.innerText = visible.length;
+    if (totalLabel) totalLabel.innerText = history.length;
+
+    if (visible.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:0.5; padding:20px;">Keine Aktivitäten gefunden.</td></tr>';
+        return;
     }
 
-    // Count recordings per day
-    const counts = days.map(day => {
-        return history.filter(item => {
-            if (!item.timestamp) return false;
-            try {
-                const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
-                return itemDate === day;
-            } catch (e) { return false; }
-        }).length;
-    });
+    visible.forEach(entry => {
+        const tr = document.createElement('tr');
 
-    const max = Math.max(...counts, 5); // Minimum scale of 5 for aesthetics
+        // Status Badge logic
+        // If mode is 'jira' or 'email' or 'chat', we might assume 'processed'
+        // If 'standard' -> 'success'
+        // Just a heuristic for now
+        let statusClass = 'badge-success';
+        let statusText = 'ERFOLGREICH';
 
-    counts.forEach((val, idx) => {
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
+        if (entry.mode === 'email' || entry.mode === 'jira') {
+            statusClass = 'badge-processing';
+            statusText = 'BEARBEITET';
+        }
 
-        const percentage = (val / max) * 100;
-        bar.style.height = `${percentage}%`;
+        // Date
+        const dateObj = new Date(entry.timestamp);
+        const dateStr = dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
-        // Tooltip
-        const dateObj = new Date(days[idx]);
-        const dateStr = dateObj.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
-        bar.title = `${dateStr}: ${val} Aufnahmen`;
+        // Content
+        const rawText = entry.result || entry.text || '';
+        const shortText = rawText.length > 40 ? rawText.substring(0, 40) + '...' : rawText;
 
-        container.appendChild(bar);
+        // Duration / Length
+        // entry.duration not always there? Assume chars count as metric
+        const chars = rawText.length;
+
+        tr.innerHTML = `
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td><div class="table-text" title="${rawText.replace(/"/g, '&quot;')}">${shortText}</div></td>
+            <td><span class="table-date">${dateStr}, ${timeStr}</span></td>
+            <td><span class="table-date">${chars} Zeichen</span></td>
+            <td>
+                <div class="action-btn-group">
+                    <button class="btn-icon-small btn-copy" title="Kopieren">📋</button>
+                    <button class="btn-icon-small btn-delete" title="Löschen">🗑️</button>
+                </div>
+            </td>
+        `;
+
+        // Logic
+        tr.querySelector('.btn-copy').addEventListener('click', () => {
+            window.electron.copyToClipboard(rawText);
+            showToast('Kopiert!', 'success');
+        });
+
+        // Delete (Only from view strictly speaking, or real delete?)
+        // Currently we don't have a clear ID based delete in history store maybe?
+        // Entry usually doesn't have an ID unless we added it recently.
+        // Assuming index based or we skip delete for now.
+        // Let's implement delete if entry has ID, else ignore.
+        tr.querySelector('.btn-delete').addEventListener('click', async (e) => {
+            if (confirm('Eintrag löschen?')) {
+                if (entry.id) {
+                    await window.electron.deleteHistoryEntry(entry.id);
+                    tr.remove();
+                    // Refresh stats to update counts
+                    loadStats();
+                    showToast('Eintrag gelöscht', 'success');
+                } else {
+                    // Fallback for very old entries without ID
+                    tr.remove();
+                    showToast('Eintrag lokal entfernt (Keine ID)', 'info');
+                }
+            }
+        });
+
+        tbody.appendChild(tr);
     });
 }
 
@@ -756,23 +855,25 @@ function renderHistoryList() {
             }
         }
 
+        const text = entry.result || entry.text || '';
+
         card.innerHTML = `
             <div class="hc-header">
                 <span class="hc-badge ${badgeClass}">${displayMode}</span>
                 <span class="hc-time">${dateStr}, ${timeStr}</span>
             </div>
-            <div class="hc-content">${entry.text}</div>
+            <div class="hc-content">${text}</div>
             <div class="hc-footer">
                 <div class="hc-meta">
                     <span>🌐 DE</span>
-                    <span>📄 ${entry.text ? entry.text.length : 0} Zeichen</span>
+                    <span>📄 ${text.length} Zeichen</span>
                 </div>
                 <button class="btn-copy">Kopieren</button>
             </div>
         `;
 
         card.querySelector('.btn-copy').addEventListener('click', () => {
-            window.electron.copyToClipboard(entry.text);
+            window.electron.copyToClipboard(text);
             showToast('In Zwischenablage kopiert!', 'success');
         });
 
@@ -803,45 +904,246 @@ function renderHistoryList() {
     }
 }
 
+async function loadStats() {
+    try {
+        const stats = await window.electron.getStats();
+        const els = {
+            transcriptions: document.getElementById('stat-transcriptions'),
+            words: document.getElementById('stat-words'),
+            time: document.getElementById('stat-time')
+        };
+
+        if (els.transcriptions) els.transcriptions.innerText = stats.totalTranscriptions;
+        if (els.words) els.words.innerText = stats.totalChars;
+        if (els.time) {
+            const mins = Math.round(stats.savedTime / 60);
+            els.time.innerText = stats.savedTime > 3600 ? `${(stats.savedTime / 3600).toFixed(1)}h` : `${mins}m`;
+        }
+    } catch (e) { console.warn('Stats load failed', e); }
+}
+
 
 // --- SETTINGS ---
 async function loadSettings() {
     try {
-        const key = await window.electron.getApiKey();
-        if (key) document.getElementById('api-key-input').value = key;
+        const apiKeyInput = document.getElementById('api-key-input');
+        const hotkeyInput = document.getElementById('hotkey-input');
+        const audioDeviceSelect = document.getElementById('audio-device-select');
+        const startLoginCheckbox = document.getElementById('check-autostart');
+        const startHiddenCheckbox = document.getElementById('check-startmin');
+        const transcriptModelSelect = document.getElementById('model-transcription'); // Corrected ID
+        const llmModelSelect = document.getElementById('model-llm'); // Corrected ID
+        const languageSelect = document.getElementById('languageSelect'); // New element
+
+        // Load Settings
+        const apiKey = await window.electron.getApiKey();
+        if (apiKey) apiKeyInput.value = apiKey;
 
         const hotkey = await window.electron.getHotkey();
-        const hotkeyInput = document.getElementById('hotkey-input');
         if (hotkey) hotkeyInput.value = hotkey;
 
-        // Auto-Start
-        try {
-            const launch = await window.electron.getLaunchSettings();
-            document.getElementById('check-autostart').checked = launch.openAtLogin;
-            document.getElementById('check-startmin').checked = launch.openAsHidden;
-        } catch (e) {
-            console.warn('Launch settings failed (IPC not ready?)', e);
+        const audioDevice = await window.electron.getAudioDevice();
+        if (audioDevice) audioDeviceSelect.value = audioDevice;
+
+        const currentLanguage = await window.electron.getLanguage();
+        if (currentLanguage) languageSelect.value = currentLanguage;
+
+        const autoPasteCheckbox = document.getElementById('check-autopaste');
+        const autoPaste = await window.electron.getAutoPaste();
+        if (autoPasteCheckbox) autoPasteCheckbox.checked = autoPaste;
+
+        // User Initials
+        const userInitialsInput = document.getElementById('user-initials-input');
+        const initials = await window.electron.getUserInitials();
+        if (userInitialsInput && initials) userInitialsInput.value = initials;
+        // Update avatar
+        const avatarEl = document.getElementById('user-avatar');
+        if (avatarEl && initials) avatarEl.textContent = initials;
+
+        const launchSettings = await window.electron.getLaunchSettings();
+        if (launchSettings) {
+            startLoginCheckbox.checked = launchSettings.openAtLogin;
+            startHiddenCheckbox.checked = launchSettings.openAsHidden;
         }
+
+        // Load Models
+        const models = await window.electron.getModels();
+        if (models) {
+            if (models.transcription && transcriptModelSelect) transcriptModelSelect.value = models.transcription;
+            if (models.llm && llmModelSelect) llmModelSelect.value = models.llm;
+        }
+
 
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audioInputs = devices.filter(d => d.kind === 'audioinput');
-        const select = document.getElementById('audio-device-select');
-        select.innerHTML = '';
+        // const select = document.getElementById('audio-device-select'); // This was already defined as audioDeviceSelect
+        audioDeviceSelect.innerHTML = '';
         audioInputs.forEach(d => {
             const op = document.createElement('option');
             op.value = d.deviceId;
-            op.text = d.label || 'Microphone';
-            select.appendChild(op);
+            op.innerText = d.label || `Microphone ${d.deviceId.slice(0, 5)}...`;
+            audioDeviceSelect.appendChild(op);
         });
 
+        // Set selected device after populating
+        if (audioDevice) audioDeviceSelect.value = audioDevice;
+
         // Position
-        try {
-            const pos = await window.electron.getOverlayPosition();
-            const posSelect = document.getElementById('overlay-pos-select');
-            if (posSelect) posSelect.value = pos || 'bottom-right';
-        } catch (e) { console.warn('Overlay position load failed', e); }
+        const pos = await window.electron.getOverlayPosition();
+        if (pos) document.getElementById('overlay-pos-select').value = pos;
+
+        // Dictionary & Models
+        await loadDictionary();
+        await loadModels();
 
     } catch (err) {
         console.error('Error loading settings:', err);
+    }
+}
+
+// --- DICTIONARY ---
+async function loadDictionary() {
+    const entries = await window.electron.getDictionary() || [];
+    renderDictionaryList(entries);
+}
+
+function renderDictionaryList(entries) {
+    const container = document.getElementById('dictionary-list');
+    if (!container) return;
+
+    if (entries.length === 0) {
+        container.innerHTML = '<div style="color:#6B7280; font-size:13px; font-style:italic;">Keine Einträge vorhanden.</div>';
+        return;
+    }
+
+    container.innerHTML = entries.map(e => `
+        <div class="dict-entry">
+            <span class="dict-spoken">"${e.spoken}"</span>
+            <span class="dict-arrow">→</span>
+            <span class="dict-written">"${e.written}"</span>
+            <button class="dict-delete" onclick="deleteDictEntry('${e.id}')">🗑️</button>
+        </div>
+    `).join('');
+}
+
+async function addDictEntry() {
+    const spokenInput = document.getElementById('dict-spoken');
+    const writtenInput = document.getElementById('dict-written');
+
+    const spoken = spokenInput.value.trim();
+    const written = writtenInput.value.trim();
+
+    if (!spoken || !written) return;
+
+    await window.electron.addDictionaryEntry({ spoken, written });
+    spokenInput.value = '';
+    writtenInput.value = '';
+    loadDictionary();
+}
+
+async function deleteDictEntry(id) {
+    if (confirm('Eintrag wirklich löschen?')) {
+        await window.electron.removeDictionaryEntry(id);
+        loadDictionary();
+    }
+}
+
+// Ensure these are globally available for onclick handlers
+window.addDictEntry = addDictEntry;
+window.deleteDictEntry = deleteDictEntry;
+
+// Event Listener for Add Button
+document.getElementById('add-dict-btn')?.addEventListener('click', addDictEntry);
+
+
+function initSettingsListeners() {
+    const languageSelect = document.getElementById('languageSelect');
+    const transcriptModelSelect = document.getElementById('model-transcription');
+    const llmModelSelect = document.getElementById('model-llm');
+    const autoPasteCheckbox = document.getElementById('check-autopaste');
+    const startLogin = document.getElementById('check-autostart');
+    const startMin = document.getElementById('check-startmin');
+
+    if (languageSelect) {
+        languageSelect.onchange = async () => {
+            await window.electron.saveLanguage(languageSelect.value);
+            showToast('Sprache gespeichert', 'success');
+        };
+    }
+
+    if (autoPasteCheckbox) {
+        autoPasteCheckbox.onchange = async () => {
+            await window.electron.saveAutoPaste(autoPasteCheckbox.checked);
+            showToast('Einstellung gespeichert', 'success');
+        };
+    }
+
+    const saveLaunch = async () => {
+        if (!startLogin || !startMin) return;
+        await window.electron.saveLaunchSettings({
+            openAtLogin: startLogin.checked,
+            openAsHidden: startMin.checked
+        });
+        showToast('Start-Einstellungen gespeichert', 'success');
+    };
+
+    if (startLogin) startLogin.onchange = saveLaunch;
+    if (startMin) startMin.onchange = saveLaunch;
+
+    // User Initials
+    const userInitialsInput = document.getElementById('user-initials-input');
+    if (userInitialsInput) {
+        userInitialsInput.onchange = async () => {
+            const val = userInitialsInput.value.toUpperCase().slice(0, 2);
+            await window.electron.saveUserInitials(val);
+            userInitialsInput.value = val; // Normalize display
+            // Update avatar
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl) avatarEl.textContent = val || 'VF';
+            showToast('Initialen gespeichert', 'success');
+        };
+    }
+
+    if (transcriptModelSelect) {
+        transcriptModelSelect.onchange = async (e) => {
+            await window.electron.saveModels({ transcription: e.target.value });
+            showToast('Modell gespeichert', 'success');
+        };
+    }
+
+    if (llmModelSelect) {
+        llmModelSelect.onchange = async (e) => {
+            await window.electron.saveModels({ llm: e.target.value });
+            showToast('Modell gespeichert', 'success');
+        };
+    }
+
+    // Toggle API Visibility
+    const toggleApiBtn = document.getElementById('toggle-api-visibility');
+    const apiKeyInput = document.getElementById('api-key-input');
+    if (toggleApiBtn && apiKeyInput) {
+        toggleApiBtn.onclick = () => {
+            const isSecret = apiKeyInput.type === 'password';
+            apiKeyInput.type = isSecret ? 'text' : 'password';
+            toggleApiBtn.innerText = isSecret ? '🔒' : '👁️';
+        };
+    }
+}
+
+// --- MODELS ---
+async function loadModels() {
+    // This function now only ensures the models are loaded and selected,
+    // the listeners are handled by initSettingsListeners.
+    const models = await window.electron.getModels();
+
+    const transSelect = document.getElementById('model-transcription');
+    const llmSelect = document.getElementById('model-llm');
+
+    if (transSelect && models.transcription) {
+        transSelect.value = models.transcription;
+    }
+
+    if (llmSelect && models.llm) {
+        llmSelect.value = models.llm;
     }
 }
