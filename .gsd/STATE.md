@@ -1,12 +1,18 @@
 # STATE.md — Current Project Status
 
-> **Current Phase**: Phase 2: AI Reliability & Prompt Engineering
-> **Milestone**: v0.4.0 (The Structure & Reliability Update)
+> **Current Phase**: Project Complete (v0.4.0 Released)
+> **Milestone**: v0.4.0 (Live)
 
 ## Current Position
-- **Phase**: 2
-- **Task**: Planning complete
-- **Status**: Ready for execution
+- **Phase**: Release Complete
+- **Status**: Live & Verified
+
+## Accomplishments
+- **Phase 1**: IPC Architecture Refactoring (Complete)
+- **Phase 2**: AI Reliability & Prompt Engineering (Complete)
+- **Phase 3**: Feature Polish (MVP Completeness) (Complete)
+- **Phase 4**: User Manual & Verification (Complete)
 
 ## Next Steps
-1. /execute 2
+- Consider deferred features (Clipboard-free auto-paste) if needed in future.
+- Maintenance and bug fixes as discovered.

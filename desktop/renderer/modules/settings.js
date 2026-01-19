@@ -1,19 +1,48 @@
 import { loadDictionary } from './dictionary.js';
 import { showToast } from './toast.js';
+import { TRANSCRIPTION_MODELS, LLM_MODELS } from '../api.js';
+
+function populateModelSelects() {
+    const transcriptModelSelect = document.getElementById('model-transcription');
+    const llmModelSelect = document.getElementById('model-llm');
+
+    if (transcriptModelSelect) {
+        transcriptModelSelect.innerHTML = '';
+        Object.entries(TRANSCRIPTION_MODELS).forEach(([id, model]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${model.name} ($${model.price}/min)`;
+            transcriptModelSelect.appendChild(option);
+        });
+    }
+
+    if (llmModelSelect) {
+        llmModelSelect.innerHTML = '';
+        Object.entries(LLM_MODELS).forEach(([id, model]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${model.name} ($${model.inputPrice}/$${model.outputPrice})`;
+            llmModelSelect.appendChild(option);
+        });
+    }
+}
 
 export async function loadSettings() {
     try {
-        const apiKeyInput = document.getElementById('api-key-input');
+        populateModelSelects();
+
+        const transcriptModelSelect = document.getElementById('model-transcription');
+        const llmModelSelect = document.getElementById('model-llm');
+
         const hotkeyInput = document.getElementById('hotkey-input');
         const audioDeviceSelect = document.getElementById('audio-device-select');
         const startLoginCheckbox = document.getElementById('check-autostart');
         const startHiddenCheckbox = document.getElementById('check-startmin');
-        const transcriptModelSelect = document.getElementById('model-transcription');
-        const llmModelSelect = document.getElementById('model-llm');
         const languageSelect = document.getElementById('languageSelect');
+        const apiKeyInput = document.getElementById('api-key-input');
 
-        const apiKey = await window.electron.getApiKey();
-        if (apiKey) apiKeyInput.value = apiKey;
+        const key = await window.electron.getApiKey();
+        if (key && apiKeyInput) apiKeyInput.value = key;
 
         const hotkey = await window.electron.getHotkey();
         if (hotkey) hotkeyInput.value = hotkey;
@@ -48,14 +77,38 @@ export async function loadSettings() {
         }
 
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+        let audioInputs = devices.filter(d => d.kind === 'audioinput');
+
+        // If no devices found (or labels empty), request permission
+        if (audioInputs.length === 0 || audioInputs.every(d => !d.label)) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Enumerate again after permission
+                const newDevices = await navigator.mediaDevices.enumerateDevices();
+                audioInputs = newDevices.filter(d => d.kind === 'audioinput');
+                // Stop stream immediately
+                stream.getTracks().forEach(t => t.stop());
+            } catch (e) {
+                console.warn('Microphone permission denied', e);
+                showToast('Mikrofon-Zugriff verweigert', 'error');
+            }
+        }
+
         audioDeviceSelect.innerHTML = '';
-        audioInputs.forEach(d => {
+        console.log('[Settings] Audio Inputs found:', audioInputs.length, audioInputs);
+        if (audioInputs.length === 0) {
             const op = document.createElement('option');
-            op.value = d.deviceId;
-            op.innerText = d.label || `Microphone ${d.deviceId.slice(0, 5)}...`;
+            op.value = 'default';
+            op.innerText = 'Standard-Mikrofon';
             audioDeviceSelect.appendChild(op);
-        });
+        } else {
+            audioInputs.forEach(d => {
+                const op = document.createElement('option');
+                op.value = d.deviceId;
+                op.innerText = d.label || `Microphone ${d.deviceId.slice(0, 5)}...`;
+                audioDeviceSelect.appendChild(op);
+            });
+        }
 
         if (audioDevice) audioDeviceSelect.value = audioDevice;
 

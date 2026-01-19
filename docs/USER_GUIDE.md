@@ -39,11 +39,12 @@
 
 ## 🎙️ Usage
 
-### Global Hotkey (`F2`)
-VoiceFlow runs in the background. Press and hold **F2** to start recording directly into any active application.
-1.  **Hold F2**: A small overlay appears (🔴 Recording...).
-2.  **Speak**: Say your command or text.
-3.  **Release F2**: The audio is processed, and the result is automatically pasted into your active window.
+### Global Hotkey (`Ctrl+Shift+D/Cmd+Shift+D`)
+VoiceFlow runs in the background. Press and hold `Command/Ctrl + Shift + D` to start recording directly into any active application.
+- **Start recording**: Press `Command/Ctrl + Shift + D`
+- **Stop recording**: Release the keys (standard behavior) or press again.
+- **Cancel**: Press `Escape` while the overlay is visible.
+- **Mode Switcher**: Press `Alt + M` to quickly select a different transcription mode.
 
 ### Modes
 Customize how VoiceFlow processes your speech in the **Dashboard** -> **Modes** tab.

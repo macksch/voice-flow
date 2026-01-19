@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, clipboard, screen } = require('electron');
+const { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, clipboard, screen, session } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
@@ -256,6 +256,17 @@ function registerAllHotkeys() {
 
 // --- App Lifecycle ---
 app.whenReady().then(() => {
+    // Permission Handler for Microphones
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+        const allowedPermissions = ['media']; // Add other permissions if needed
+        if (allowedPermissions.includes(permission)) {
+            callback(true); // Approve permission request
+        } else {
+            console.warn(`Permission denied: ${permission}`);
+            callback(false);
+        }
+    });
+
     createDashboardWindow();
     createOverlayWindow();
     createSwitcherWindow();
@@ -400,19 +411,8 @@ ipcMain.handle('update-stats', (_, count) => updateStats(count));
 ipcMain.handle('get-app-version', () => app.getVersion());
 
 // API Connection Check
-ipcMain.handle('check-api-connection', async (_, apiKey) => {
-    if (!apiKey) return false;
-    try {
-        const response = await fetch('https://api.groq.com/openai/v1/models', {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        return response.ok;
-    } catch (error) {
-        console.error('API Check Failed:', error);
-        return false;
-    }
-});
+// API Connection Check (Moved to Renderer)
+// ipcMain.handle('check-api-connection', async (_, apiKey) => { ... });
 
 // Mode Hotkeys Refresh
 ipcMain.handle('refresh-mode-hotkeys', () => {

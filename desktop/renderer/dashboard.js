@@ -1,4 +1,5 @@
 import { State, PRESET_ICONS } from './modules/state.js';
+import { checkApiKey } from './api.js';
 import { showToast } from './modules/toast.js';
 import { loadModesForEditor, prepareEditor, saveModeFromEditor, deleteCustomMode, updateActiveModeDisplay } from './modules/modes.js';
 import { loadHistory, renderHistoryList, renderActivityTable } from './modules/history.js';
@@ -86,6 +87,8 @@ async function checkFirstRun() {
 }
 
 
+// checkApiKey imported at top of file
+
 async function checkApiStatus() {
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.api-status span');
@@ -95,11 +98,11 @@ async function checkApiStatus() {
     statusText.innerText = 'Prüfe...';
     statusDot.style.background = 'var(--text-secondary)';
 
-    const apiKey = document.getElementById('api-key-input').value; // Get current input value (after loadSettings)
-    // Fallback if input is empty but key is saved? loadSettings fills input, so input value is safe.
+    const apiKey = document.getElementById('api-key-input').value;
 
     try {
-        const isConnected = await window.electron.checkApiConnection(apiKey);
+        // Use renderer-side check instead of IPC
+        const isConnected = await checkApiKey(apiKey);
 
         if (isConnected) {
             statusDot.style.background = 'var(--success)';

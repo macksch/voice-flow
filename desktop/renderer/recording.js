@@ -216,7 +216,10 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// --- Audio Processing ---
+import { transcribe, cleanText } from './api.js';
+
+// ... existing code ...
+
 async function processAudio(audioBlob, mode) {
     try {
         const apiKey = await window.electron.getApiKey();
@@ -231,9 +234,8 @@ async function processAudio(audioBlob, mode) {
             modeBadge.style.color = "#FFD700";
         }
 
-        if (typeof window.transcribe === 'undefined') {
-            throw new Error('API module not loaded');
-        }
+        // Removed manual check for window.transcribe since we import it
+
 
         // Get Models, Dictionary & Language
         const models = await window.electron.getModels();
@@ -241,7 +243,7 @@ async function processAudio(audioBlob, mode) {
         const language = await window.electron.getLanguage() || 'de';
 
         // Transcribe
-        const rawText = await window.transcribe(audioBlob, apiKey, models.transcription, language);
+        const rawText = await transcribe(audioBlob, apiKey, models.transcription, language);
         console.log('Transkription:', rawText);
 
         if (modeBadge) modeBadge.innerText = "Cleaning...";
@@ -261,7 +263,7 @@ async function processAudio(audioBlob, mode) {
         }
 
         // Clean with Dictionary and Model
-        const finalResult = await window.cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, language, examples);
+        const finalResult = await cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, language, examples);
         console.log('Final:', finalResult);
 
         // Copy to clipboard
@@ -284,8 +286,15 @@ async function processAudio(audioBlob, mode) {
         const autoPaste = await window.electron.getAutoPaste();
         if (autoPaste) {
             setTimeout(async () => {
-                await window.electron.pasteResult();
-                window.electron.closeOverlay();
+                const pasteResult = await window.electron.pasteResult();
+                console.log('Paste result:', pasteResult);
+
+                if (pasteResult && pasteResult.success === false) {
+                    console.warn('Auto-paste failed, showing pending overlay');
+                    showPendingOverlay(finalResult);
+                } else {
+                    window.electron.closeOverlay();
+                }
             }, 100);
         } else {
             window.electron.closeOverlay();

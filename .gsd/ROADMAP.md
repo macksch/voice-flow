@@ -1,7 +1,7 @@
 # ROADMAP.md
 
-> **Current Phase**: Phase 0: Mapping (Complete)
-> **Milestone**: v0.4.0 (The Structure & Reliability Update)
+> **Current Phase**: Phase 6: Release (Complete)
+> **Milestone**: v0.4.0 (Released)
 
 ## Must-Haves (from SPEC)
 - [ ] Commentary-free AI transformation
@@ -33,8 +33,16 @@
 - [ ] (Deferred) Clipboard-free auto-paste research
 
 ### Phase 4: User Manual & Final Verification
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Prepare for internal "colleague" usage and ensure stability.
-- [ ] Create a comprehensive User Test Guide.
-- [ ] Document all Environment Variables and API requirements.
-- [ ] Final performance audit of the recording pipeline.
+- [x] Create a comprehensive User Test Guide.
+- [x] Document all Environment Variables and API requirements.
+- [x] Final performance audit of the recording pipeline.
+
+### Phase 5: Bug Fixes & Refinement
+**Status**: ✅ Complete
+**Objective**: Address critical feedback from QA and refine UX.
+- [x] **Fix Model Selection**: Dynamic population from API constants.
+- [x] **Fix Hotkey**: Confirmed default as Ctrl+Shift+D.
+- [x] **Fix Paste**: Show "Copy" overlay on paste failure.
+- [x] **Fix CSS**: Ensure dropdown visibility in dark mode.

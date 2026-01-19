@@ -37,14 +37,44 @@ STRENG VERBOTEN:
 OUTPUT: NUR der bereinigte Text. Kein einziges Wort von dir selbst. Keine Anführungszeichen um den Output.`;
 
 // Available Models (curated with pricing)
-const TRANSCRIPTION_MODELS = {
-    'whisper-large-v3': 'Whisper Large V3 ($0.11/Std Audio)'
+export const TRANSCRIPTION_MODELS = {
+    'whisper-large-v3': {
+        name: 'Whisper Large V3',
+        price: 0.11
+    }
 };
 
-const LLM_MODELS = {
-    'llama-3.3-70b-versatile': 'Llama 3.3 70B — Beste Qualität ($0.59/1M)',
-    'llama-3.1-8b-instant': 'Llama 3.1 8B — Schnellste ($0.05/1M)'
+export const LLM_MODELS = {
+    'llama-3.3-70b-versatile': {
+        name: 'Llama 3.3 70B — Beste Qualität',
+        inputPrice: 0.59,
+        outputPrice: 0.79
+    },
+    'llama-3.1-8b-instant': {
+        name: 'Llama 3.1 8B — Schnellste',
+        inputPrice: 0.05,
+        outputPrice: 0.08
+    }
 };
+
+/**
+ * Checks if the API key is valid by making a lightweight request
+ * @param {string} apiKey 
+ * @returns {Promise<boolean>}
+ */
+export async function checkApiKey(apiKey) {
+    if (!apiKey) return false;
+    try {
+        const response = await fetch(`${GROQ_BASE_URL}/models`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+        });
+        return response.ok;
+    } catch (e) {
+        console.error('API Check Critical Failure:', e);
+        return false;
+    }
+}
 
 // Helper for delay
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -56,7 +86,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @param {string} model - Transcription model ID
  * @returns {Promise<string>} Transcribed text
  */
-async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', language = 'de') {
+export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', language = 'de') {
     const maxRetries = 3;
     let attempt = 0;
 
@@ -114,7 +144,7 @@ async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', languag
  * @param {string} language - Detected language code (e.g., 'de', 'en')
  * @returns {Promise<string>} Cleaned text (falls back to raw on error)
  */
-async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto', examples = []) {
+export async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto', examples = []) {
     if (!rawText || rawText.trim().length === 0) return "";
 
     // Build the full system prompt with language instruction
