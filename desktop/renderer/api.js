@@ -36,16 +36,14 @@ STRENG VERBOTEN:
 
 OUTPUT: NUR der bereinigte Text. Kein einziges Wort von dir selbst. Keine Anführungszeichen um den Output.`;
 
-// Available Models
+// Available Models (curated with pricing)
 const TRANSCRIPTION_MODELS = {
-    'whisper-large-v3': 'Whisper Large V3 (Standard)',
-    'whisper-large-v3-turbo': 'Whisper Large V3 Turbo (Schneller)'
+    'whisper-large-v3': 'Whisper Large V3 ($0.11/Std Audio)'
 };
 
 const LLM_MODELS = {
-    'llama-3.3-70b-versatile': 'Llama 3.3 70B (Beste Qualität)',
-    'llama-3.1-8b-instant': 'Llama 3.1 8B (Max Speed)',
-    'mixtral-8x7b-32768': 'Mixtral 8x7B (Ausgewogen)'
+    'llama-3.3-70b-versatile': 'Llama 3.3 70B — Beste Qualität ($0.59/1M)',
+    'llama-3.1-8b-instant': 'Llama 3.1 8B — Schnellste ($0.05/1M)'
 };
 
 // Helper for delay

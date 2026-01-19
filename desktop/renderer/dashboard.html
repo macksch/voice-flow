@@ -223,8 +223,19 @@
 
         <!-- VIEW: History -->
         <div id="view-history" class="view hidden">
-            <div class="history-controls">
-                <input type="text" placeholder="Transkripte durchsuchen..." class="search-input" id="history-search">
+            <div class="history-controls" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <input type="text" placeholder="Transkripte durchsuchen..." class="search-input" id="history-search"
+                    style="flex: 1; min-width: 200px;">
+                <select id="history-mode-filter" class="input-field" style="width: auto; min-width: 140px;">
+                    <option value="all">Alle Modi</option>
+                    <!-- Populated by JS -->
+                </select>
+                <select id="history-date-filter" class="input-field" style="width: auto; min-width: 140px;">
+                    <option value="all">Alle Zeiten</option>
+                    <option value="today">Heute</option>
+                    <option value="7days">Letzte 7 Tage</option>
+                    <option value="30days">Letzte 30 Tage</option>
+                </select>
                 <button class="btn-create" style="width: auto;" id="btn-start-rec-action">🎙️ Neue Aufnahme
                     starten</button>
             </div>

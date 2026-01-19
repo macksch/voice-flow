@@ -164,7 +164,17 @@ function attachEventListeners() {
             } else if (item.dataset.tab === 'history') {
                 titleEl.textContent = 'Verlauf';
                 subEl.textContent = 'Deine letzten Transkriptionen.';
-                renderHistoryList();
+
+                // Populate mode filter dropdown
+                const modeFilter = document.getElementById('history-mode-filter');
+                if (modeFilter && State.allModes) {
+                    modeFilter.innerHTML = '<option value="all">Alle Modi</option>';
+                    State.allModes.forEach(m => {
+                        modeFilter.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+                    });
+                }
+
+                loadHistory();
             } else if (item.dataset.tab === 'settings') {
                 titleEl.textContent = 'Einstellungen';
                 subEl.textContent = 'Systemkonfiguration.';
@@ -287,8 +297,16 @@ function attachEventListeners() {
         showToast('Bitte Global Hotkey nutzen: ' + hotkey, 'info');
     });
 
-    document.getElementById('history-search').addEventListener('input', (e) => {
-        loadHistory(e.target.value);
+    document.getElementById('history-search').addEventListener('input', () => {
+        loadHistory();
+    });
+
+    document.getElementById('history-mode-filter')?.addEventListener('change', () => {
+        loadHistory();
+    });
+
+    document.getElementById('history-date-filter')?.addEventListener('change', () => {
+        loadHistory();
     });
 
     // Settings Save

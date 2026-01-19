@@ -1,7 +1,22 @@
 import { State } from './state.js';
 import { showToast } from './toast.js';
 
-export async function loadHistory(filterText = '') {
+// Helper to calculate date cutoff for presets
+function getDateCutoff(preset) {
+    const now = new Date();
+    switch (preset) {
+        case 'today':
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        case '7days':
+            return now.getTime() - 7 * 24 * 60 * 60 * 1000;
+        case '30days':
+            return now.getTime() - 30 * 24 * 60 * 60 * 1000;
+        default:
+            return 0; // No cutoff
+    }
+}
+
+export async function loadHistory(filterText = '', modeFilter = 'all', dateFilter = 'all') {
     const history = await window.electron.getHistory();
 
     // Sort logic (newest first)
@@ -11,7 +26,33 @@ export async function loadHistory(filterText = '') {
         return timeB - timeA;
     });
 
-    State.currentLoadedHistory = history.filter(h => !filterText || (h.text && h.text.toLowerCase().includes(filterText.toLowerCase())));
+    // Get filter values from DOM if not provided
+    if (!filterText) {
+        filterText = document.getElementById('history-search')?.value || '';
+    }
+    if (modeFilter === 'all') {
+        modeFilter = document.getElementById('history-mode-filter')?.value || 'all';
+    }
+    if (dateFilter === 'all') {
+        dateFilter = document.getElementById('history-date-filter')?.value || 'all';
+    }
+
+    const dateCutoff = getDateCutoff(dateFilter);
+
+    State.currentLoadedHistory = history.filter(h => {
+        // Text filter
+        const textMatch = !filterText || (h.text && h.text.toLowerCase().includes(filterText.toLowerCase())) ||
+            (h.result && h.result.toLowerCase().includes(filterText.toLowerCase()));
+
+        // Mode filter
+        const modeMatch = modeFilter === 'all' || h.mode === modeFilter;
+
+        // Date filter
+        const timestamp = h.timestamp ? new Date(h.timestamp).getTime() : 0;
+        const dateMatch = dateCutoff === 0 || timestamp >= dateCutoff;
+
+        return textMatch && modeMatch && dateMatch;
+    });
 
     // Reset Pagination
     State.historyDisplayLimit = 20;
