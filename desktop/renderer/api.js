@@ -121,10 +121,15 @@ async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model =
 
     // Build the full system prompt with language instruction
     let languageInstruction = '';
-    if (language && language !== 'auto') {
-        const langNames = { de: 'Deutsch', en: 'Englisch', fr: 'Französisch', es: 'Spanisch' };
-        const langName = langNames[language] || language;
-        languageInstruction = `\n\nSPRACHE: Antworte IMMER auf ${langName}. Behalte fremdsprachige Fachbegriffe bei.`;
+
+    // Skip language lock if mode prompt explicitly requests translation (e.g. Translate Mode)
+    const promptRef = (systemPrompt || '').toLowerCase();
+    if (!promptRef.includes('always respond in english')) {
+        if (language && language !== 'auto') {
+            const langNames = { de: 'Deutsch', en: 'Englisch', fr: 'Französisch', es: 'Spanisch' };
+            const langName = langNames[language] || language;
+            languageInstruction = `\n\nSPRACHE: Antworte IMMER auf ${langName}. Behalte fremdsprachige Fachbegriffe bei.`;
+        }
     }
 
     const fullSystemPrompt = systemPrompt

@@ -53,6 +53,16 @@ export async function loadModesForEditor() {
 - Behalte eine lockere, informelle ("Du") Tonalität bei.
 - Verzichte auf förmliche Korrekturen.
 - Gib NUR den Text zurück.`
+        },
+        {
+            id: 'translate-en',
+            name: 'Translate to English',
+            icon: '🇬🇧',
+            prompt: `- IGNORE the input language. ALWAYS respond in ENGLISH.
+- Translate the meaning accurately while keeping the original tone.
+- Keep technical terms, brand names, and proper nouns unchanged.
+- Remove filler words during translation.
+- Output ONLY the translated text.`
         }
     ];
 
