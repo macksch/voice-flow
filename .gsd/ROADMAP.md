@@ -26,11 +26,11 @@
 - [ ] Refine "Few-Shot" examples in `api.js` to better mimic user style.
 
 ### Phase 3: Feature Polish (MVP Completeness)
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Ensure all non-negotiable features are professional-grade.
-- [ ] Validate and fix "Automatic Pasting" edge cases.
-- [ ] Implement functional UI for Model Selection (Transcription vs. LLM).
-- [ ] Enhance History Tracking with better search/filtering.
+- [x] Curate Model Selection with pricing info (Plan 3.1)
+- [x] Implement History Filtering — Mode & Date (Plan 3.2)
+- [ ] (Deferred) Clipboard-free auto-paste research
 
 ### Phase 4: User Manual & Final Verification
 **Status**: ⬜ Not Started
