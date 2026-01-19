@@ -111,6 +111,7 @@ export function prepareEditor(mode) {
     const nameIn = document.getElementById('edit-name');
     const promptIn = document.getElementById('edit-prompt');
     const iconIn = document.getElementById('edit-icon');
+    const examplesIn = document.getElementById('edit-examples');
     const activeIndicator = document.getElementById('editor-active-indicator');
     const setActiveBtn = document.getElementById('btn-set-active');
     const deleteBtn = document.getElementById('btn-delete-mode');
@@ -136,6 +137,7 @@ export function prepareEditor(mode) {
         nameIn.value = mode.name;
         promptIn.value = mode.prompt || '';
         iconIn.value = mode.icon || '✨';
+        if (examplesIn) examplesIn.value = formatExamples(mode.examples);
 
         // Active State UI
         if (mode.id === State.currentActiveMode) {
@@ -158,6 +160,7 @@ export function prepareEditor(mode) {
         promptIn.value = '';
         iconIn.value = '✨';
         nameIn.placeholder = "Neuer Modus Name";
+        if (examplesIn) examplesIn.value = '';
 
         activeIndicator.classList.add('hidden');
         setActiveBtn.classList.add('hidden');
@@ -169,6 +172,7 @@ export async function saveModeFromEditor() {
     const name = document.getElementById('edit-name').value;
     const prompt = document.getElementById('edit-prompt').value;
     const icon = document.getElementById('edit-icon').value;
+    const examplesText = document.getElementById('edit-examples')?.value;
 
     if (!name) return showToast('Name fehlt!', 'error');
 
@@ -176,7 +180,8 @@ export async function saveModeFromEditor() {
         id: State.editingModeId || Date.now().toString(),
         name,
         prompt,
-        icon
+        icon,
+        examples: parseExamples(examplesText)
     };
 
     const currentCustom = await window.electron.getCustomModes() || [];
@@ -259,7 +264,24 @@ export function updateActiveModeDisplay() {
             }
         }
 
-        if (activeLabel) activeLabel.innerText = displayOne;
-        if (activeIconContainer) activeIconContainer.innerText = iconOne;
     });
+}
+
+// Helper to parse examples from textarea
+function parseExamples(text) {
+    if (!text) return [];
+    return text.split('---').map(block => {
+        const inputMatch = block.match(/INPUT:\s*(.+)/s);
+        const outputMatch = block.match(/OUTPUT:\s*(.+)/s);
+        if (inputMatch && outputMatch) {
+            return { input: inputMatch[1].trim(), output: outputMatch[1].trim() };
+        }
+        return null;
+    }).filter(Boolean);
+}
+
+// Helper to format examples for textarea
+function formatExamples(examples) {
+    if (!examples || examples.length === 0) return '';
+    return examples.map(e => `INPUT: ${e.input}\nOUTPUT: ${e.output}`).join('\n---\n');
 }

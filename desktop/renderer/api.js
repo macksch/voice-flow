@@ -116,7 +116,7 @@ async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', languag
  * @param {string} language - Detected language code (e.g., 'de', 'en')
  * @returns {Promise<string>} Cleaned text (falls back to raw on error)
  */
-async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto') {
+async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto', examples = []) {
     if (!rawText || rawText.trim().length === 0) return "";
 
     // Build the full system prompt with language instruction
@@ -141,8 +141,11 @@ async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model =
         { role: 'system', content: fullSystemPrompt }
     ];
 
+    // Determine which examples to use
+    const effectiveExamples = (examples && examples.length > 0) ? examples.slice(0, 3) : FEW_SHOT_EXAMPLES;
+
     // Add few-shot examples as user/assistant pairs
-    for (const example of FEW_SHOT_EXAMPLES) {
+    for (const example of effectiveExamples) {
         messages.push({ role: 'user', content: example.input });
         messages.push({ role: 'assistant', content: example.output });
     }

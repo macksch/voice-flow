@@ -248,6 +248,7 @@ async function processAudio(audioBlob, mode) {
 
         // Resolve Prompt
         let systemPrompt = "Bereinige diesen Text.";
+        let examples = [];
         if (window.PROMPTS && window.PROMPTS[mode]) {
             systemPrompt = window.PROMPTS[mode];
         } else {
@@ -255,11 +256,12 @@ async function processAudio(audioBlob, mode) {
             const custom = customModes.find(m => m.id === mode || m.name === mode);
             if (custom) {
                 systemPrompt = custom.prompt;
+                examples = custom.examples || [];
             }
         }
 
         // Clean with Dictionary and Model
-        const finalResult = await window.cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, language);
+        const finalResult = await window.cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, language, examples);
         console.log('Final:', finalResult);
 
         // Copy to clipboard
