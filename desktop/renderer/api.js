@@ -113,15 +113,23 @@ async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', languag
  * @param {string} systemPrompt - Optional custom system prompt
  * @param {Array} dictionary - Optional dictionary entries
  * @param {string} model - LLM model ID
+ * @param {string} language - Detected language code (e.g., 'de', 'en')
  * @returns {Promise<string>} Cleaned text (falls back to raw on error)
  */
-async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile') {
+async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto') {
     if (!rawText || rawText.trim().length === 0) return "";
 
-    // Build the full system prompt
+    // Build the full system prompt with language instruction
+    let languageInstruction = '';
+    if (language && language !== 'auto') {
+        const langNames = { de: 'Deutsch', en: 'Englisch', fr: 'Französisch', es: 'Spanisch' };
+        const langName = langNames[language] || language;
+        languageInstruction = `\n\nSPRACHE: Antworte IMMER auf ${langName}. Behalte fremdsprachige Fachbegriffe bei.`;
+    }
+
     const fullSystemPrompt = systemPrompt
-        ? `${SYSTEM_PROMPT}\n\nZusätzliche Regeln:\n${systemPrompt}`
-        : SYSTEM_PROMPT;
+        ? `${SYSTEM_PROMPT}${languageInstruction}\n\nZusätzliche Regeln:\n${systemPrompt}`
+        : `${SYSTEM_PROMPT}${languageInstruction}`;
 
     // Build messages array with few-shot examples
     const messages = [

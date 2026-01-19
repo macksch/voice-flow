@@ -259,7 +259,7 @@ async function processAudio(audioBlob, mode) {
         }
 
         // Clean with Dictionary and Model
-        const finalResult = await window.cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm);
+        const finalResult = await window.cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, language);
         console.log('Final:', finalResult);
 
         // Copy to clipboard
