@@ -270,6 +270,17 @@ function attachEventListeners() {
         reader.readAsText(file);
     });
 
+    // --- Dictionary Actions ---
+    const addDictBtn = document.getElementById('add-dict-btn');
+    if (addDictBtn) {
+        addDictBtn.addEventListener('click', () => {
+            addDictEntry();
+        });
+    }
+
+    // Make deleteDictEntry available for onclick in HTML
+    window.deleteDictEntry = deleteDictEntry;
+
     // --- History Actions ---
     document.getElementById('btn-start-rec-action').addEventListener('click', () => {
         const hotkey = document.getElementById('hotkey-input').value;
