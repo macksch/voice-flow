@@ -214,8 +214,6 @@ function toggleRecording() {
         overlayWindow.setSize(460, 140); // Match new width
         overlayWindow.setPosition(Math.round(x), Math.round(y));
         overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-        overlayWindow.setPosition(Math.round(x), Math.round(y));
-        overlayWindow.setAlwaysOnTop(true, 'screen-saver');
         overlayWindow.showInactive(); // Show without activating/focusing
         overlayWindow.webContents.send('start-recording');
         if (tray) tray.setImage(path.join(__dirname, 'assets/icons/tray-recording.png'));

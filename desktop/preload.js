@@ -6,8 +6,14 @@ contextBridge.exposeInMainWorld('electron', {
     cancelRecording: () => ipcRenderer.send('cancel-recording'),
 
     // Recording controls
-    onStartRecording: (callback) => ipcRenderer.on('start-recording', callback),
-    onStopRecording: (callback) => ipcRenderer.on('stop-recording', callback),
+    onStartRecording: (callback) => {
+        ipcRenderer.removeAllListeners('start-recording');
+        ipcRenderer.on('start-recording', callback);
+    },
+    onStopRecording: (callback) => {
+        ipcRenderer.removeAllListeners('stop-recording');
+        ipcRenderer.on('stop-recording', callback);
+    },
     sendAudioData: (buffer) => ipcRenderer.invoke('process-audio', buffer),
 
     // API Key Management
@@ -45,8 +51,14 @@ contextBridge.exposeInMainWorld('electron', {
 
     // Notifications
     showToast: (message, type) => ipcRenderer.invoke('show-toast', { message, type }),
-    onShowSettings: (callback) => ipcRenderer.on('show-settings', callback),
-    onHistoryUpdated: (callback) => ipcRenderer.on('history-updated', callback),
+    onShowSettings: (callback) => {
+        ipcRenderer.removeAllListeners('show-settings');
+        ipcRenderer.on('show-settings', callback);
+    },
+    onHistoryUpdated: (callback) => {
+        ipcRenderer.removeAllListeners('history-updated');
+        ipcRenderer.on('history-updated', callback);
+    },
 
     // Tutorial / First Run
     getIsFirstRun: () => ipcRenderer.invoke('get-is-first-run'),
@@ -55,9 +67,18 @@ contextBridge.exposeInMainWorld('electron', {
     // Updater
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
-    onUpdateMessage: (callback) => ipcRenderer.on('update-message', (event, text) => callback(text)),
-    onUpdateProgress: (callback) => ipcRenderer.on('update-download-progress', (event, progressObj) => callback(progressObj.percent)),
-    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, info) => callback(info)),
+    onUpdateMessage: (callback) => {
+        ipcRenderer.removeAllListeners('update-message');
+        ipcRenderer.on('update-message', (event, text) => callback(text));
+    },
+    onUpdateProgress: (callback) => {
+        ipcRenderer.removeAllListeners('update-download-progress');
+        ipcRenderer.on('update-download-progress', (event, progressObj) => callback(progressObj.percent));
+    },
+    onUpdateDownloaded: (callback) => {
+        ipcRenderer.removeAllListeners('update-downloaded');
+        ipcRenderer.on('update-downloaded', (event, info) => callback(info));
+    },
 
     // App Info
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
@@ -91,9 +112,15 @@ contextBridge.exposeInMainWorld('electron', {
     // Switcher
     switchMode: (modeId) => ipcRenderer.send('switch-mode', modeId),
     hideSwitcher: () => ipcRenderer.send('hide-switcher'),
-    onUpdateModes: (callback) => ipcRenderer.on('update-modes', (event, data) => callback(data)),
+    onUpdateModes: (callback) => {
+        ipcRenderer.removeAllListeners('update-modes');
+        ipcRenderer.on('update-modes', (event, data) => callback(data));
+    },
 
     // Mode Changed (Dashboard)
-    onModeChanged: (callback) => ipcRenderer.on('mode-changed', (event, modeId) => callback(modeId))
+    onModeChanged: (callback) => {
+        ipcRenderer.removeAllListeners('mode-changed');
+        ipcRenderer.on('mode-changed', (event, modeId) => callback(modeId));
+    }
 });
 
