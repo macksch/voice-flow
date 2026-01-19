@@ -243,20 +243,19 @@ function stripLLMMetaCommentary(text) {
     return result.trim();
 }
 
-/**
- * Applies dictionary replacements to text
- * @param {string} text - Text to process
- * @param {Array} dictionary - Array of {spoken, written} entries
- * @returns {string} Text with replacements applied
- */
 function applyDictionary(text, dictionary) {
     if (!dictionary || dictionary.length === 0) return text;
 
     let result = text;
     for (const entry of dictionary) {
-        // Case-insensitive word boundary replacement
-        const regex = new RegExp(`\\b${escapeRegex(entry.spoken)}\\b`, 'gi');
-        result = result.replace(regex, entry.written);
+        // Collect all triggers: primary + variations
+        const triggers = [entry.spoken, ...(entry.variations || [])];
+
+        for (const trigger of triggers) {
+            // Case-insensitive word boundary replacement
+            const regex = new RegExp(`\\b${escapeRegex(trigger.trim())}\\b`, 'gi');
+            result = result.replace(regex, entry.written);
+        }
     }
     return result;
 }

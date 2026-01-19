@@ -12,26 +12,38 @@ export function renderDictionaryList(entries) {
         return;
     }
 
-    container.innerHTML = entries.map(e => `
+    container.innerHTML = entries.map(e => {
+        const variationsText = e.variations && e.variations.length > 0
+            ? `<span style="opacity:0.6; font-size:0.9em;"> (${e.variations.join(', ')})</span>`
+            : '';
+
+        return `
         <div class="dict-entry">
-            <span class="dict-spoken">"${e.spoken}"</span>
-            <span class="dict-arrow">→</span>
-            <span class="dict-written">"${e.written}"</span>
+            <div style="flex:1; overflow:hidden; text-overflow:ellipsis;">
+                <span class="dict-spoken">"${e.spoken}"${variationsText}</span>
+                <span class="dict-arrow">→</span>
+                <span class="dict-written">"${e.written}"</span>
+            </div>
             <button class="dict-delete" onclick="deleteDictEntry('${e.id}')">🗑️</button>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 export async function addDictEntry() {
     const spokenInput = document.getElementById('dict-spoken');
     const writtenInput = document.getElementById('dict-written');
 
-    const spoken = spokenInput.value.trim();
+    const rawSpoken = spokenInput.value.trim();
     const written = writtenInput.value.trim();
 
-    if (!spoken || !written) return;
+    if (!rawSpoken || !written) return;
 
-    await window.electron.addDictionaryEntry({ spoken, written });
+    // Parse variations (comma separated)
+    const parts = rawSpoken.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    const spoken = parts[0];
+    const variations = parts.slice(1);
+
+    await window.electron.addDictionaryEntry({ spoken, variations, written });
     spokenInput.value = '';
     writtenInput.value = '';
     loadDictionary();
