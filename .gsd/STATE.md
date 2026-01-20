@@ -1,18 +1,22 @@
 # STATE.md — Current Project Status
 
-> **Current Phase**: Project Complete (v0.4.0 Released)
-> **Milestone**: v0.4.0 (Live)
+> **Current Phase**: Phase 8: CI/CD Automation (Verification)
+> **Milestone**: v0.5.0 (Release)
 
 ## Current Position
-- **Phase**: Release Complete
-- **Status**: Live & Verified
+- **Phase**: 8.3 (Verification)
+- **Status**: CI/CD Automation implemented. Version bumped to `0.5.0`. Waiting for user to push tag to trigger first automated release.
 
 ## Accomplishments
-- **Phase 1**: IPC Architecture Refactoring (Complete)
-- **Phase 2**: AI Reliability & Prompt Engineering (Complete)
-- **Phase 3**: Feature Polish (MVP Completeness) (Complete)
-- **Phase 4**: User Manual & Verification (Complete)
+- **Phase 7**: Completed Intelligence & Language Accuracy.
+- **Phase 8 (CI/CD)**:
+    - Created `.github/workflows/build.yml` for automated Windows builds.
+    - Configured `package.json` with GitHub as publish provider.
+    - Implemented automatic update check in `main.js` (production only).
+    - Verified `autoUpdater` UI and IPC listeners in `main.js` and `dashboard.js`.
+    - Bumped application version to `0.5.0`.
 
 ## Next Steps
-- Consider deferred features (Clipboard-free auto-paste) if needed in future.
-- Maintenance and bug fixes as discovered.
+- User pushes tag `v0.5.0`.
+- Verify GitHub Release creation.
+- Test auto-update with a dummy `v0.5.1` tag later.

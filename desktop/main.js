@@ -279,15 +279,20 @@ app.whenReady().then(() => {
         showDashboard();
     }
 
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createDashboardWindow();
-            createOverlayWindow();
-            createSwitcherWindow();
-        } else {
-            showDashboard();
-        }
-    });
+    // Auto-check for updates on startup (Production only)
+    if (process.env.NODE_ENV !== 'development') {
+        autoUpdater.checkForUpdatesAndNotify();
+    }
+});
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createDashboardWindow();
+        createOverlayWindow();
+        createSwitcherWindow();
+    } else {
+        showDashboard();
+    }
+});
 });
 
 app.on('window-all-closed', () => {

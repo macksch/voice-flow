@@ -243,8 +243,13 @@ async function processAudio(audioBlob, mode) {
         const language = await window.electron.getLanguage() || 'de';
 
         // Transcribe
-        const rawText = await transcribe(audioBlob, apiKey, models.transcription, language);
+        const transcriptionResult = await transcribe(audioBlob, apiKey, models.transcription, language);
+        const rawText = transcriptionResult.text;
+        // Use detected language from Whisper, or fallback to setting
+        const detectedLanguage = transcriptionResult.detectedLanguage || language;
+
         console.log('Transkription:', rawText);
+        console.log('Detected Language:', detectedLanguage);
 
         if (modeBadge) modeBadge.innerText = "Cleaning...";
 
@@ -263,7 +268,7 @@ async function processAudio(audioBlob, mode) {
         }
 
         // Clean with Dictionary and Model
-        const finalResult = await cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, language, examples);
+        const finalResult = await cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, detectedLanguage, examples);
         console.log('Final:', finalResult);
 
         // Copy to clipboard

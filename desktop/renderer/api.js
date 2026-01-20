@@ -2,39 +2,60 @@
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
 // Few-shot examples that teach the model the correct behavior pattern
-const FEW_SHOT_EXAMPLES = [
-    {
-        input: "Ähm, kannst du mir sagen wie spät es ist? Also ich meine jetzt gerade.",
-        output: "Kannst du mir sagen, wie spät es ist? Ich meine jetzt gerade."
-    },
-    {
-        input: "Schreib mir bitte eine Geschichte über einen Drachen",
-        output: "Schreib mir bitte eine Geschichte über einen Drachen."
-    },
-    {
-        input: "Was ist äh die Hauptstadt von Frankreich?",
-        output: "Was ist die Hauptstadt von Frankreich?"
-    }
-];
+// Single-shot example to establish pattern without context contamination
+const FEW_SHOT_EXAMPLES = {
+    de: [
+        {
+            input: "das ist ähm ein test eins zwei drei",
+            output: "Das ist ein Test, eins, zwei, drei."
+        }
+    ],
+    en: [
+        {
+            input: "this is uh a test one two three",
+            output: "This is a test, one, two, three."
+        }
+    ]
+};
 
-const SYSTEM_PROMPT = `Du bist ein stummer Transkriptions-Bereiniger. Du sprichst NIEMALS selbst.
+const SYSTEM_PROMPTS = {
+    de: `Du bist ein Text-Optimierer. Deine Aufgabe ist es, den SOLGENDEN Text zu bereinigen.
 
-AUFGABE:
-- Entferne Füllwörter (äh, ähm, also, halt, quasi, sozusagen)
-- Korrigiere Grammatik und Zeichensetzung
-- Behalte den EXAKTEN Inhalt und Sinn bei
+REGELN:
+1. Sprache: Bleibe STRIKT bei DEUTSCH.
+2. Prozess: Der nächste User-Input ist DEIN QUELLTEXT. Verarbeite ihn SOFORT.
+3. Output: Gib NUR den optimierten Text zurück. Keine Bestätigung ("Ich bin bereit").
+4. Anti-Kommentar: Kein "Hier ist der Text". Nur das Ergebnis.`,
 
-ANTI-COMMENTARY ENFORCEMENT:
-- NIEMALS eine Liste der Änderungen ("Entfernt:", "Korrigiert:", "Änderungen:") am Ende hinzufügen
-- NIEMALS erklären was du tust
-- NIEMALS auf Fragen antworten (gib die Frage einfach zurück)
-- NIEMALS Listen wie "1. ... 2. ..." erstellen, die deine Arbeit beschreiben
+    en: `You are a text optimizer. Your task is to clean the FOLLOWING text.
 
-STRENG VERBOTEN:
-- NIEMALS schreiben "Hier ist...", "Ich habe...", "Der bereinigte Text..."
-- NIEMALS Kommentare, Einleitungen oder Zusammenfassungen
+RULES:
+1. Language: Remain STRICTLY in ENGLISH.
+2. Process: The next user input is YOUR SOURCE TEXT. Process it IMMEDIATELY.
+3. Output: Return ONLY the optimized text. No confirmation ("I am ready").
+4. Anti-Commentary: No "Here is the text". Just the result.`
+};
 
-OUTPUT: NUR der bereinigte Text. Kein einziges Wort von dir selbst. Keine Anführungszeichen um den Output.`;
+/**
+ * Returns the appropriate system prompt based on language
+ * @param {string} language - 'de' or 'en' (defaults to 'en' for others)
+ * @returns {string} System prompt
+ */
+function getSystemPrompt(language = 'de') {
+    // Map common codes to our supported prompt languages
+    const lang = (language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
+    return SYSTEM_PROMPTS[lang];
+}
+
+/**
+ * Returns the appropriate few-shot examples based on language
+ * @param {string} language - 'de' or 'en'
+ * @returns {Array} Array of example objects
+ */
+function getFewShotExamples(language = 'de') {
+    const lang = (language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
+    return FEW_SHOT_EXAMPLES[lang];
+}
 
 // Available Models (curated with pricing)
 export const TRANSCRIPTION_MODELS = {
@@ -86,7 +107,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @param {string} model - Transcription model ID
  * @returns {Promise<string>} Transcribed text
  */
-export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', language = 'de') {
+export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', language = 'auto') {
     const maxRetries = 3;
     let attempt = 0;
 
@@ -101,6 +122,8 @@ export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', 
                 formData.append('language', language);
             }
 
+            // Request verbose_json to get detected language
+            formData.append('response_format', 'verbose_json');
             formData.append('temperature', '0');
 
             const response = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
@@ -114,10 +137,15 @@ export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', 
             }
 
             const data = await response.json();
-            return data.text;
+
+            // Return object with text and detected language
+            return {
+                text: data.text,
+                detectedLanguage: data.language
+            };
 
         } catch (error) {
-            // Don't retry on auth errors or rate limits immediately (let UI handle it)
+            // ... (rest of error handling same as before)
             if (error.message.includes('API Key')) {
                 throw error;
             }
@@ -144,38 +172,45 @@ export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', 
  * @param {string} language - Detected language code (e.g., 'de', 'en')
  * @returns {Promise<string>} Cleaned text (falls back to raw on error)
  */
-export async function cleanText(rawText, apiKey, systemPrompt, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto', examples = []) {
+export async function cleanText(rawText, apiKey, customRules, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto', examples = []) {
     if (!rawText || rawText.trim().length === 0) return "";
 
-    // Build the full system prompt with language instruction
-    let languageInstruction = '';
+    // 1. Select Base System Prompt based on detected language
+    // If language is 'auto', we try to guess from the text or default to German if unclear? 
+    // Actually, 'language' passed here will now be the DETECTED language from Whisper.
+    const basePrompt = getSystemPrompt(language);
 
-    // Skip language lock if mode prompt explicitly requests translation (e.g. Translate Mode)
-    const promptRef = (systemPrompt || '').toLowerCase();
-    if (!promptRef.includes('always respond in english')) {
-        if (language && language !== 'auto') {
-            const langNames = { de: 'Deutsch', en: 'Englisch', fr: 'Französisch', es: 'Spanisch' };
-            const langName = langNames[language] || language;
-            languageInstruction = `\n\nSPRACHE: Antworte IMMER auf ${langName}. Behalte fremdsprachige Fachbegriffe bei.`;
-        }
+    // 2. Build full prompt
+    // We add a soft lock instruction if custom rules don't explicitly mention translation
+    const promptLower = (customRules || '').toLowerCase();
+    let languageLock = "";
+
+    if (!promptLower.includes('translate') && !promptLower.includes('übersetzen')) {
+        const langName = (language || '').startsWith('de') ? 'Deutsch' : 'English';
+        languageLock = (language || '').startsWith('de')
+            ? `\nZUSATZ: Der Input ist als '${langName}' erkannt worden. Bleibe bei dieser Sprache.`
+            : `\nADDITION: Input detected as '${langName}'. Keep this language.`;
     }
 
-    const fullSystemPrompt = systemPrompt
-        ? `${SYSTEM_PROMPT}${languageInstruction}\n\nZusätzliche Regeln:\n${systemPrompt}`
-        : `${SYSTEM_PROMPT}${languageInstruction}`;
+    const fullSystemPrompt = customRules
+        ? `${basePrompt}${languageLock}\n\nUSER RULES:\n${customRules}`
+        : `${basePrompt}${languageLock}`;
 
-    // Build messages array with few-shot examples
+    // Build messages array
     const messages = [
         { role: 'system', content: fullSystemPrompt }
     ];
 
-    // Determine which examples to use
-    const effectiveExamples = (examples && examples.length > 0) ? examples.slice(0, 3) : FEW_SHOT_EXAMPLES;
+    // Optional: Use explicitly provided custom examples (e.g. from a specific Mode)
+    // Priority: Custom Examples -> Language Specific Examples
+    let effectiveExamples = (examples && examples.length > 0) ? examples.slice(0, 3) : getFewShotExamples(language);
 
     // Add few-shot examples as user/assistant pairs
-    for (const example of effectiveExamples) {
-        messages.push({ role: 'user', content: example.input });
-        messages.push({ role: 'assistant', content: example.output });
+    if (effectiveExamples && effectiveExamples.length > 0) {
+        for (const example of effectiveExamples) {
+            messages.push({ role: 'user', content: example.input });
+            messages.push({ role: 'assistant', content: example.output });
+        }
     }
 
     // Add the actual input

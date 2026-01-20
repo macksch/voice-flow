@@ -1,29 +1,31 @@
 # ROADMAP.md
 
-> **Current Phase**: Phase 6: Release (Complete)
-> **Milestone**: v0.4.0 (Released)
+> **Current Phase**: Phase 7: Intelligence & Language Accuracy (Planning)
+> **Milestone**: v0.5.0 (Developing)
 
 ## Must-Haves (from SPEC)
-- [ ] Commentary-free AI transformation
+- [x] Commentary-free AI transformation
 - [ ] Robust Auto-Pasting (Windows)
-- [ ] Functional Model Selection
-- [ ] Cleaned IPC Architecture
+- [x] Functional Model Selection
+- [x] Cleaned IPC Architecture
+- [ ] **Strict Language Lock (Input = Output)**
+- [ ] **Advanced Upcycling Quality**
 
 ## Phases
 
 ### Phase 1: Foundation & IPC Refactoring
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Clean up the "unfinished" feel by streamlining the communication between Main and Renderer processes.
-- [ ] Decouple `dashboard.js` logic into smaller modules.
-- [ ] Centralize IPC event handling to prevent listener leaks.
-- [ ] Fix existing "small bugs" in window management (Dashboard/Overlay).
+- [x] Decouple `dashboard.js` logic into smaller modules.
+- [x] Centralize IPC event handling to prevent listener leaks.
+- [x] Fix existing "small bugs" in window management (Dashboard/Overlay).
 
 ### Phase 2: AI Reliability & Prompt Engineering
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Solve the "interference" and "language hiccup" problems.
-- [ ] Implement robust System Prompts that strictly forbid metadata/explanations.
-- [ ] Add language detection or strict language passing to the upcycling process.
-- [ ] Refine "Few-Shot" examples in `api.js` to better mimic user style.
+- [x] Implement robust System Prompts that strictly forbid metadata/explanations.
+- [x] Add language detection or strict language passing to the upcycling process.
+- [x] Refine "Few-Shot" examples in `api.js` to better mimic user style.
 
 ### Phase 3: Feature Polish (MVP Completeness)
 **Status**: ✅ Complete
@@ -46,3 +48,20 @@
 - [x] **Fix Hotkey**: Confirmed default as Ctrl+Shift+D.
 - [x] **Fix Paste**: Show "Copy" overlay on paste failure.
 - [x] **Fix CSS**: Ensure dropdown visibility in dark mode.
+
+### Phase 7: Intelligence & Language Accuracy
+**Status**: ⬜ Not Started
+**Objective**: Ensure the AI always speaks the user's language and provides professional-grade upcycling.
+- [ ] Implement Whisper `verbose_json` for language detection.
+- [ ] Create bilingual/neutral `SYSTEM_PROMPT` to remove German bias.
+- [ ] Pipe detected language from Whisper into Llama cleanup.
+- [ ] Refine Standard/Jira/Email prompts for higher quality.
+
+### Phase 8: CI/CD Automation
+**Status**: 🔵 In Progress
+**Objective**: Automate Windows builds and releases via GitHub Actions.
+- [x] Configure `electron-builder` for generic (GitHub) provider.
+- [x] Create GitHub Action workflow (`build.yml`) for Windows.
+- [x] Implement basic auto-update listener in `main.js`.
+- [ ] Verification: Push a tag and verify release creation.
+

@@ -11,58 +11,52 @@ export async function loadModesForEditor() {
             id: 'standard',
             name: 'Standard (Diktat)',
             icon: '🎤',
-            prompt: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
-- Entferne nur Füllwörter (äh, ähm, also, halt).
-- Korrigiere nur offensichtliche Grammatikfehler.
-- Behalte den Stil und die Wortwahl bei (keine inhaltlichen Änderungen).
+            prompt: `- Behalte die Sprache des Inputs STRIKT bei (Input Englisch = Output Englisch).
+- Entferne NUR Füllwörter (äh, ähm, also, sozusagen) und Stottern.
+- Korrigiere Grammatik und Zeichensetzung präzise.
+- Ändere NIEMALS den Wortlaut oder Stil, wenn es nicht grammatikalisch notwendig ist.
 - Gib NUR den bereinigten Text zurück.`
         },
         {
             id: 'email',
             name: 'E-Mail',
             icon: '✉️',
-            prompt: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
-- Entferne Füllwörter und korrigiere Grammatik.
-- Formatiere den Text mit sinnvollen Absätzen.
-- Füge bei Bedarf eine passende Anrede und Grußformel hinzu, falls diese fehlen oder impliziert sind.
-- Achte auf eine höfliche, professionelle Tonalität.
-- Gib NUR den E-Mail-Inhalt zurück (keine Betreffzeile).`
+            prompt: `- Sprache: Wie Input.
+- Formatiere den Text als professionelle E-Mail mit Absätzen.
+- Korrigiere Grammatik und Ausdruck.
+- Füge eine zum Kontext passende Anrede und Grußformel hinzu (falls nicht diktiert).
+- Tonalität: Höflich, professionell, klar.
+- Gib NUR den E-Mail-Body zurück (keine Betreff-Vorschläge, keine Meta-Texte).`
         },
         {
             id: 'jira',
             name: 'Jira Ticket',
             icon: '🎫',
-            prompt: `- Sprache: Wie Input (De/En).
-- Strukturiere den Output ZWINGEND mit diesen Überschriften (in Fettdruck):
+            prompt: `- Sprache: Wie Input.
+- Strukturiere den Inhalt professionell in ein Jira-Ticket um.
+- Versuche, die folgenden Abschnitte zu füllen (falls Informationen vorhanden sind):
   **Zusammenfassung**
-  (Ein prägnanter Satz)
+  (Ein prägnanter Titel)
 
   **Beschreibung**
-  (Detaillierte Erklärung des Problems oder Features)
+  (Detaillierte Problembeschreibung oder Anforderung)
 
   **Akzeptanzkriterien**
   (Liste der Anforderungen als Bullet Points)
-- Entferne Füllwörter, aber behalte technische Details exakt bei.`
+- Tonalität: Technisch, sachlich, präzise (Entwickler-Sprache).
+- Entferne Füllwörter komplett.
+- Formatiere Code-Snippets oder Fehlermeldungen in Markdown-Codeblöcken.`
         },
         {
             id: 'chat',
             name: 'Chat',
             icon: '💬',
             prompt: `- Sprache: Wie Input.
-- Entferne Stottern und grobe Füllwörter.
-- Behalte eine lockere, informelle ("Du") Tonalität bei.
-- Verzichte auf förmliche Korrekturen.
+- Entferne nur grobe Füllwörter (äh, ähm).
+- Behalte die lockere, gesprochene Umgangssprache bei ("Du"-Form).
+- Verwende Emojis, wenn es zum Kontext passt (aber sparsam).
+- Korrigiere keine saloppen Formulierungen (z.B. "is nich" statt "ist nicht"), um den Chat-Charakter zu wahren.
 - Gib NUR den Text zurück.`
-        },
-        {
-            id: 'translate-en',
-            name: 'Translate to English',
-            icon: '🇬🇧',
-            prompt: `- IGNORE the input language. ALWAYS respond in ENGLISH.
-- Translate the meaning accurately while keeping the original tone.
-- Keep technical terms, brand names, and proper nouns unchanged.
-- Remove filler words during translation.
-- Output ONLY the translated text.`
         }
     ];
 
