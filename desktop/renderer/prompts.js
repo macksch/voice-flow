@@ -3,14 +3,14 @@ const PROMPTS = {
 - Entferne nur Füllwörter (äh, ähm, also, halt).
 - Korrigiere nur offensichtliche Grammatikfehler.
 - Behalte den Stil und die Wortwahl bei (keine inhaltlichen Änderungen).
-- Gib NUR den bereinigten Text zurück.`,
+- Gib NUR den bereinigten Text zurück.`
 
     email: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
 - Entferne Füllwörter und korrigiere Grammatik.
 - Formatiere den Text mit sinnvollen Absätzen.
 - Füge bei Bedarf eine passende Anrede und Grußformel hinzu, falls diese fehlen oder impliziert sind.
 - Achte auf eine höfliche, professionelle Tonalität.
-- Gib NUR den E-Mail-Inhalt zurück (keine Betreffzeile).`,
+- Gib NUR den E-Mail-Inhalt zurück (keine Betreffzeile).`
 
     jira: `- Sprache: Wie Input (De/En).
 - Strukturiere den Output ZWINGEND mit diesen Überschriften (in Fettdruck):
@@ -22,7 +22,7 @@ const PROMPTS = {
 
   **Akzeptanzkriterien**
   (Liste der Anforderungen als Bullet Points)
-- Entferne Füllwörter, aber behalte technische Details exakt bei.`,
+- Entferne Füllwörter, aber behalte technische Details exakt bei.`
 
     chat: `- Sprache: Wie Input.
 - Entferne Stottern und grobe Füllwörter.

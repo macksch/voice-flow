@@ -691,15 +691,17 @@ body {
     cursor: pointer;
     margin-bottom: 8px;
     border: 1px solid transparent;
+    background: transparent;
 }
 
 .mode-list-item:hover {
     background: var(--bg-input);
+    border: 1px solid transparent;
 }
 
 .mode-list-item.active {
     background: rgba(124, 93, 250, 0.1);
-    border-color: var(--primary);
+    border: 1px solid var(--primary);
 }
 
 .mode-list-icon {

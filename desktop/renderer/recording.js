@@ -240,32 +240,52 @@ async function processAudio(audioBlob, mode) {
         // Get Models, Dictionary & Language
         const models = await window.electron.getModels();
         const dictionary = await window.electron.getDictionary() || [];
-        const language = await window.electron.getLanguage() || 'de';
+        const language = await window.electron.getLanguage() || 'auto';
 
-        // Transcribe
-        const transcriptionResult = await transcribe(audioBlob, apiKey, models.transcription, language);
+        // Transcribe - Always use auto to let Whisper detect language
+        const transcriptionResult = await transcribe(audioBlob, apiKey, models.transcription, 'auto');
         const rawText = transcriptionResult.text;
-        // Use detected language from Whisper, or fallback to setting
-        const detectedLanguage = transcriptionResult.detectedLanguage || language;
+        // Use detected language from Whisper, or fallback to 'auto' (let LLM decide)
+        const detectedLanguage = transcriptionResult.detectedLanguage || 'auto';
+
+        // Debug: Show detected language via Toast
+        await window.electron.showToast(`Erkannte Sprache: ${detectedLanguage || 'Unbekannt'}`, 'info');
 
         console.log('Transkription:', rawText);
         console.log('Detected Language:', detectedLanguage);
+        console.log('Full transcription result:', transcriptionResult);
 
         if (modeBadge) modeBadge.innerText = "Cleaning...";
 
         // Resolve Prompt
         let systemPrompt = "Bereinige diesen Text.";
         let examples = [];
+
+        console.log('[processAudio] Current mode:', mode);
+        console.log('[processAudio] window.PROMPTS available:', !!window.PROMPTS);
+        if (window.PROMPTS) {
+            console.log('[processAudio] Available system prompts:', Object.keys(window.PROMPTS));
+        }
+
         if (window.PROMPTS && window.PROMPTS[mode]) {
             systemPrompt = window.PROMPTS[mode];
+            console.log('[processAudio] Using SYSTEM prompt for mode:', mode);
+            await window.electron.showToast(`System-Prompt wird verwendet (Modus: ${mode})`, 'info');
         } else {
             const customModes = await window.electron.getCustomModes() || [];
             const custom = customModes.find(m => m.id === mode || m.name === mode);
             if (custom) {
                 systemPrompt = custom.prompt;
                 examples = custom.examples || [];
+                console.log('[processAudio] Using CUSTOM prompt for mode:', mode, 'Custom name:', custom.name);
+                await window.electron.showToast(`Custom-Prompt wird verwendet (Modus: ${custom.name})`, 'info');
+            } else {
+                console.log('[processAudio] No prompt found for mode:', mode);
+                await window.electron.showToast(`Kein Prompt gefunden für Modus: ${mode}`, 'error');
             }
         }
+
+        console.log('[processAudio] Final system prompt:', systemPrompt);
 
         // Clean with Dictionary and Model
         const finalResult = await cleanText(rawText, apiKey, systemPrompt, dictionary, models.llm, detectedLanguage, examples);

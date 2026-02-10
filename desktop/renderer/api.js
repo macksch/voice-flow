@@ -33,7 +33,7 @@ RULES:
 1. Language: Remain STRICTLY in ENGLISH.
 2. Process: The next user input is YOUR SOURCE TEXT. Process it IMMEDIATELY.
 3. Output: Return ONLY the optimized text. No confirmation ("I am ready").
-4. Anti-Commentary: No "Here is the text". Just the result.`
+4. Anti-Commentary: No "Here is the text. Just the result.`
 };
 
 /**
@@ -175,26 +175,48 @@ export async function transcribe(audioBlob, apiKey, model = 'whisper-large-v3', 
 export async function cleanText(rawText, apiKey, customRules, dictionary = [], model = 'llama-3.3-70b-versatile', language = 'auto', examples = []) {
     if (!rawText || rawText.trim().length === 0) return "";
 
+    // Log detected language for debugging
+    console.log('[cleanText] Detected language:', language, 'Raw text:', rawText.substring(0, 50));
+
     // 1. Select Base System Prompt based on detected language
-    // If language is 'auto', we try to guess from the text or default to German if unclear? 
-    // Actually, 'language' passed here will now be the DETECTED language from Whisper.
-    const basePrompt = getSystemPrompt(language);
+    // If language is 'auto' or undefined, default to German as fallback for better results
+    const effectiveLanguage = (!language || language === 'auto') ? 'de' : language;
+    console.log('[cleanText] Effective language:', effectiveLanguage);
+
+    // Debug: Show effective language via Toast
+    if (typeof window !== 'undefined' && window.electron) {
+        window.electron.showToast(`LLM verwendet Sprache: ${effectiveLanguage.toUpperCase()}`, 'info');
+    }
+
+    const basePrompt = getSystemPrompt(effectiveLanguage);
+    console.log('[cleanText] Base prompt selected:', effectiveLanguage === 'de' ? 'DEUTSCH' : 'ENGLISCH');
 
     // 2. Build full prompt
     // We add a soft lock instruction if custom rules don't explicitly mention translation
     const promptLower = (customRules || '').toLowerCase();
     let languageLock = "";
 
-    if (!promptLower.includes('translate') && !promptLower.includes('übersetzen')) {
-        const langName = (language || '').startsWith('de') ? 'Deutsch' : 'English';
-        languageLock = (language || '').startsWith('de')
+    // Check for both English AND German translation keywords
+    const wantsTranslation = promptLower.includes('translate') ||
+                          promptLower.includes('übersetzen') ||
+                          promptLower.includes('english') ||
+                          promptLower.includes('englisch');
+
+    if (!wantsTranslation) {
+        const langName = effectiveLanguage.startsWith('de') ? 'Deutsch' : 'English';
+        languageLock = effectiveLanguage.startsWith('de')
             ? `\nZUSATZ: Der Input ist als '${langName}' erkannt worden. Bleibe bei dieser Sprache.`
             : `\nADDITION: Input detected as '${langName}'. Keep this language.`;
+        console.log('[cleanText] Language lock added:', languageLock);
+    } else {
+        console.log('[cleanText] Translation requested, skipping language lock');
     }
 
     const fullSystemPrompt = customRules
         ? `${basePrompt}${languageLock}\n\nUSER RULES:\n${customRules}`
         : `${basePrompt}${languageLock}`;
+
+    console.log('[cleanText] Full system prompt:', fullSystemPrompt);
 
     // Build messages array
     const messages = [
@@ -203,7 +225,7 @@ export async function cleanText(rawText, apiKey, customRules, dictionary = [], m
 
     // Optional: Use explicitly provided custom examples (e.g. from a specific Mode)
     // Priority: Custom Examples -> Language Specific Examples
-    let effectiveExamples = (examples && examples.length > 0) ? examples.slice(0, 3) : getFewShotExamples(language);
+    let effectiveExamples = (examples && examples.length > 0) ? examples.slice(0, 3) : getFewShotExamples(effectiveLanguage);
 
     // Add few-shot examples as user/assistant pairs
     if (effectiveExamples && effectiveExamples.length > 0) {
