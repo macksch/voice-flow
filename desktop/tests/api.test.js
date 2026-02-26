@@ -21,12 +21,12 @@ describe('Groq API Module', () => {
 
             global.fetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ text: mockText })
+                json: async () => ({ text: mockText, language: 'en' })
             });
 
             const result = await transcribe(mockBlob, mockKey);
 
-            expect(result).toBe(mockText);
+            expect(result).toEqual({ text: mockText, detectedLanguage: 'en' });
             expect(global.fetch).toHaveBeenCalledWith(
                 'https://api.groq.com/openai/v1/audio/transcriptions',
                 expect.objectContaining({
@@ -39,7 +39,7 @@ describe('Groq API Module', () => {
 
         it('should accept custom model and handle auto language', async () => {
             const mockBlob = new Blob(['audio'], { type: 'audio/webm' });
-            global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ text: 'ok' }) });
+            global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ text: 'ok', language: 'en' }) });
 
             await transcribe(mockBlob, 'key', 'whisper-large-v3-turbo', 'auto');
 

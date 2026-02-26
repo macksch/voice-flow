@@ -2,38 +2,37 @@
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
 // Few-shot examples that teach the model the correct behavior pattern
-// Single-shot example to establish pattern without context contamination
 const FEW_SHOT_EXAMPLES = {
     de: [
         {
             input: "das ist ähm ein test eins zwei drei",
             output: "Das ist ein Test, eins, zwei, drei."
+        },
+        {
+            input: "ich wollte ähm sagen dass das Projekt fertig ist",
+            output: "Ich wollte sagen, dass das Projekt fertig ist."
         }
     ],
     en: [
         {
             input: "this is uh a test one two three",
             output: "This is a test, one, two, three."
+        },
+        {
+            input: "i wanted uh to say that the project is done",
+            output: "I wanted to say that the project is done."
         }
     ]
 };
 
 const SYSTEM_PROMPTS = {
-    de: `Du bist ein Text-Optimierer. Deine Aufgabe ist es, den SOLGENDEN Text zu bereinigen.
+    de: `Du bist ein Text-Optimierer. Deine Aufgabe ist es, den Text zu bereinigen.
 
-REGELN:
-1. Sprache: Bleibe STRIKT bei DEUTSCH.
-2. Prozess: Der nächste User-Input ist DEIN QUELLTEXT. Verarbeite ihn SOFORT.
-3. Output: Gib NUR den optimierten Text zurück. Keine Bestätigung ("Ich bin bereit").
-4. Anti-Kommentar: Kein "Hier ist der Text". Nur das Ergebnis.`,
+WICHTIG: Beachte die USER RULES zur Sprache! Wenn dort "Sprache beibehalten" steht, respektiere dies und übersetze NICHT.`,
 
-    en: `You are a text optimizer. Your task is to clean the FOLLOWING text.
+    en: `You are a text optimizer. Your task is to clean the text.
 
-RULES:
-1. Language: Remain STRICTLY in ENGLISH.
-2. Process: The next user input is YOUR SOURCE TEXT. Process it IMMEDIATELY.
-3. Output: Return ONLY the optimized text. No confirmation ("I am ready").
-4. Anti-Commentary: No "Here is the text. Just the result.`
+IMPORTANT: Respect the USER RULES for language! If "keep language" is specified, respect it and do NOT translate.`
 };
 
 /**
@@ -192,7 +191,6 @@ export async function cleanText(rawText, apiKey, customRules, dictionary = [], m
     console.log('[cleanText] Base prompt selected:', effectiveLanguage === 'de' ? 'DEUTSCH' : 'ENGLISCH');
 
     // 2. Build full prompt
-    // We add a soft lock instruction if custom rules don't explicitly mention translation
     const promptLower = (customRules || '').toLowerCase();
     let languageLock = "";
 
@@ -202,15 +200,36 @@ export async function cleanText(rawText, apiKey, customRules, dictionary = [], m
                           promptLower.includes('english') ||
                           promptLower.includes('englisch');
 
-    if (!wantsTranslation) {
+    // Check if mode wants to preserve language
+    const wantsToPreserveLanguage = promptLower.includes('sprache beibehalten') ||
+                                   promptLower.includes('behalte die sprache') ||
+                                   promptLower.includes('wie input') ||
+                                   promptLower.includes('keep language') ||
+                                   promptLower.includes('wie der input');
+
+    if (wantsTranslation) {
+        console.log('[cleanText] Translation requested, adding target language instruction');
+        // Extract target language from prompt
+        if (promptLower.includes('deutsch') || promptLower.includes('german') || promptLower.includes('nach deutsch')) {
+            languageLock = `\nÜBERSCHREIBE alle sprachlichen Anweisungen: Der Output MUSS auf DEUTSCH sein.`;
+        } else if (promptLower.includes('englisch') || promptLower.includes('english')) {
+            languageLock = `\nÜBERSCHREIBE alle sprachlichen Anweisungen: Der Output MUSS auf ENGLISCH sein.`;
+        }
+    } else if (wantsToPreserveLanguage) {
+        console.log('[cleanText] Mode wants to preserve language, respecting input language');
         const langName = effectiveLanguage.startsWith('de') ? 'Deutsch' : 'English';
         languageLock = effectiveLanguage.startsWith('de')
-            ? `\nZUSATZ: Der Input ist als '${langName}' erkannt worden. Bleibe bei dieser Sprache.`
-            : `\nADDITION: Input detected as '${langName}'. Keep this language.`;
-        console.log('[cleanText] Language lock added:', languageLock);
+            ? `\nWICHTIG: Input ist '${langName}'. Behalte diese Sprache strikt bei - keine Übersetzung!`
+            : `\nIMPORTANT: Input is '${langName}'. Keep this language strictly - no translation!`;
     } else {
-        console.log('[cleanText] Translation requested, skipping language lock');
+        console.log('[cleanText] Default behavior: use detected language');
+        const langName = effectiveLanguage.startsWith('de') ? 'Deutsch' : 'English';
+        languageLock = effectiveLanguage.startsWith('de')
+            ? `\nDEFAULT: Der Output soll auf DEUTSCH sein.`
+            : `\nDEFAULT: The output should be in ENGLISH.`;
     }
+
+    console.log('[cleanText] Language instruction:', languageLock);
 
     const fullSystemPrompt = customRules
         ? `${basePrompt}${languageLock}\n\nUSER RULES:\n${customRules}`
@@ -328,7 +347,7 @@ function stripLLMMetaCommentary(text) {
     return result.trim();
 }
 
-function applyDictionary(text, dictionary) {
+export function applyDictionary(text, dictionary) {
     if (!dictionary || dictionary.length === 0) return text;
 
     let result = text;
@@ -375,11 +394,21 @@ async function handleApiError(response) {
 }
 
 // Expose globally for renderer
-window.transcribe = transcribe;
-window.cleanText = cleanText;
-window.applyDictionary = applyDictionary;
+if (typeof window !== 'undefined') {
+    window.transcribe = transcribe;
+    window.cleanText = cleanText;
+    window.applyDictionary = applyDictionary;
+}
 
-// Export for testing
+// Export for testing and module usage
 if (typeof module !== 'undefined') {
-    module.exports = { transcribe, cleanText, applyDictionary, TRANSCRIPTION_MODELS, LLM_MODELS };
+    module.exports = {
+        transcribe,
+        cleanText,
+        applyDictionary,
+        TRANSCRIPTION_MODELS,
+        LLM_MODELS,
+        checkApiKey,
+        stripLLMMetaCommentary
+    };
 }

@@ -1,7 +1,7 @@
 {
   "name": "voiceflow",
   "productName": "VoiceFlow",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Multi-platform dictation suite with AI integration",
   "main": "main.js",
   "repository": {

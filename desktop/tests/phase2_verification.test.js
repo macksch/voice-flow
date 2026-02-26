@@ -41,28 +41,48 @@ describe('Phase 2 Verification', () => {
             const body = JSON.parse(callArgs[1].body);
             const systemContent = body.messages[0].content;
 
-            expect(systemContent).toContain('SPRACHE:');
-            expect(systemContent).toContain('Französisch');
+            // Should use English base prompt for non-German languages
+            expect(systemContent).toContain('output should be in ENGLISH');
         });
     });
 
     describe('Plan 2.3: Translate Mode', () => {
-        it('should SKIP language instruction if prompt demands English translation', async () => {
+        it('should SKIP language preservation if prompt demands translation', async () => {
             global.fetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ choices: [{ message: { content: 'ok' } }] })
             });
 
-            const translatePrompt = "IGNORE the input language. ALWAYS respond in ENGLISH.";
-            // Pass 'de' language, but expect NO German instruction because of prompt override
+            const translatePrompt = "Translate to English: IGNORE the input language. ALWAYS respond in ENGLISH.";
+            // Pass 'de' language, but expect NO German preservation because translation is requested
             await cleanText('input', 'key', translatePrompt, [], 'model', 'de');
 
             const callArgs = global.fetch.mock.calls[0];
             const body = JSON.parse(callArgs[1].body);
             const systemContent = body.messages[0].content;
 
-            expect(systemContent).not.toContain('SPRACHE:');
-            expect(systemContent).not.toContain('Deutsch');
+            // Should NOT contain German preservation text
+            expect(systemContent).not.toContain('Behalte diese Sprache strikt bei');
+            // Should contain English translation instruction
+            expect(systemContent).toContain('MUSS auf ENGLISCH sein');
+        });
+
+        it('should preserve language if mode explicitly requests it', async () => {
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ choices: [{ message: { content: 'ok' } }] })
+            });
+
+            const preservePrompt = "BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!";
+            // Even with German detected, should preserve input language
+            await cleanText('English text input', 'key', preservePrompt, [], 'model', 'de');
+
+            const callArgs = global.fetch.mock.calls[0];
+            const body = JSON.parse(callArgs[1].body);
+            const systemContent = body.messages[0].content;
+
+            // Should contain language preservation
+            expect(systemContent).toContain('Behalte diese Sprache strikt bei');
         });
     });
 

@@ -1,18 +1,18 @@
 const PROMPTS = {
-    standard: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
+    standard: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
 - Entferne nur Füllwörter (äh, ähm, also, halt).
 - Korrigiere nur offensichtliche Grammatikfehler.
 - Behalte den Stil und die Wortwahl bei (keine inhaltlichen Änderungen).
 - Gib NUR den bereinigten Text zurück.`
 
-    email: `- Sprache beibehalten (Deutsch oder Englisch). NICHT übersetzen.
+    email: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
 - Entferne Füllwörter und korrigiere Grammatik.
 - Formatiere den Text mit sinnvollen Absätzen.
 - Füge bei Bedarf eine passende Anrede und Grußformel hinzu, falls diese fehlen oder impliziert sind.
 - Achte auf eine höfliche, professionelle Tonalität.
 - Gib NUR den E-Mail-Inhalt zurück (keine Betreffzeile).`
 
-    jira: `- Sprache: Wie Input (De/En).
+    jira: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
 - Strukturiere den Output ZWINGEND mit diesen Überschriften (in Fettdruck):
   **Zusammenfassung**
   (Ein prägnanter Satz)
@@ -24,7 +24,7 @@ const PROMPTS = {
   (Liste der Anforderungen als Bullet Points)
 - Entferne Füllwörter, aber behalte technische Details exakt bei.`
 
-    chat: `- Sprache: Wie Input.
+    chat: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
 - Entferne Stottern und grobe Füllwörter.
 - Behalte eine lockere, informelle ("Du") Tonalität bei.
 - Verzichte auf förmliche Korrekturen.

@@ -11,52 +11,53 @@ export async function loadModesForEditor() {
             id: 'standard',
             name: 'Standard (Diktat)',
             icon: '🎤',
-            prompt: `- Behalte die Sprache des Inputs STRIKT bei (Input Englisch = Output Englisch).
-- Entferne NUR Füllwörter (äh, ähm, also, sozusagen) und Stottern.
-- Korrigiere Grammatik und Zeichensetzung präzise.
-- Ändere NIEMALS den Wortlaut oder Stil, wenn es nicht grammatikalisch notwendig ist.
-- Gib NUR den bereinigten Text zurück.`
+            prompt: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
+ - Wenn Input Deutsch ist → Output Deutsch. Wenn Input Englisch ist → Output Englisch.
+ - Entferne NUR Füllwörter (äh, ähm, also, sozusagen) und Stottern.
+ - Korrigiere Grammatik und Zeichensetzung präzise.
+ - Ändere NIEMALS den Wortlaut oder Stil, wenn es nicht grammatikalisch notwendig ist.
+ - Gib NUR den bereinigten Text zurück.`
         },
         {
             id: 'email',
             name: 'E-Mail',
             icon: '✉️',
-            prompt: `- Sprache: Wie Input.
-- Formatiere den Text als professionelle E-Mail mit Absätzen.
-- Korrigiere Grammatik und Ausdruck.
-- Füge eine zum Kontext passende Anrede und Grußformel hinzu (falls nicht diktiert).
-- Tonalität: Höflich, professionell, klar.
-- Gib NUR den E-Mail-Body zurück (keine Betreff-Vorschläge, keine Meta-Texte).`
+            prompt: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
+ - Formatiere den Text als professionelle E-Mail mit Absätzen.
+ - Korrigiere Grammatik und Ausdruck.
+ - Füge eine zum Kontext passende Anrede und Grußformel hinzu (falls nicht diktiert).
+ - Tonalität: Höflich, professionell, klar.
+ - Gib NUR den E-Mail-Body zurück (keine Betreff-Vorschläge, keine Meta-Texte).`
         },
         {
             id: 'jira',
             name: 'Jira Ticket',
             icon: '🎫',
-            prompt: `- Sprache: Wie Input.
-- Strukturiere den Inhalt professionell in ein Jira-Ticket um.
-- Versuche, die folgenden Abschnitte zu füllen (falls Informationen vorhanden sind):
-  **Zusammenfassung**
-  (Ein prägnanter Titel)
+            prompt: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
+ - Strukturiere den Inhalt professionell in ein Jira-Ticket um.
+ - Versuche, die folgenden Abschnitte zu füllen (falls Informationen vorhanden sind):
+   **Zusammenfassung**
+   (Ein prägnanter Titel)
 
-  **Beschreibung**
-  (Detaillierte Problembeschreibung oder Anforderung)
+   **Beschreibung**
+   (Detaillierte Problembeschreibung oder Anforderung)
 
-  **Akzeptanzkriterien**
-  (Liste der Anforderungen als Bullet Points)
-- Tonalität: Technisch, sachlich, präzise (Entwickler-Sprache).
-- Entferne Füllwörter komplett.
-- Formatiere Code-Snippets oder Fehlermeldungen in Markdown-Codeblöcken.`
+   **Akzeptanzkriterien**
+   (Liste der Anforderungen als Bullet Points)
+ - Tonalität: Technisch, sachlich, präzise (Entwickler-Sprache).
+ - Entferne Füllwörter komplett.
+ - Formatiere Code-Snippets oder Fehlermeldungen in Markdown-Codeblöcken.`
         },
         {
             id: 'chat',
             name: 'Chat',
             icon: '💬',
-            prompt: `- Sprache: Wie Input.
-- Entferne nur grobe Füllwörter (äh, ähm).
-- Behalte die lockere, gesprochene Umgangssprache bei ("Du"-Form).
-- Verwende Emojis, wenn es zum Kontext passt (aber sparsam).
-- Korrigiere keine saloppen Formulierungen (z.B. "is nich" statt "ist nicht"), um den Chat-Charakter zu wahren.
-- Gib NUR den Text zurück.`
+            prompt: `- BEHALTE DIE SPRACHE DES INPUTS STRIKT BEI - KEINE ÜBERSETZUNG!
+ - Entferne nur grobe Füllwörter (äh, ähm).
+ - Behalte die lockere, gesprochene Umgangssprache bei ("Du"-Form).
+ - Verwende Emojis, wenn es zum Kontext passt (aber sparsam).
+ - Korrigiere keine saloppen Formulierungen (z.B. "is nich" statt "ist nicht"), um den Chat-Charakter zu wahren.
+ - Gib NUR den Text zurück.`
         }
     ];
 
